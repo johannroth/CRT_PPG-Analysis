@@ -98,13 +98,6 @@ clear valueEntryName valueEntry valueEntryLength valueEntryList iEntry;
 % detections are calculate by BeatScope based on BP-Signal (extrapolating
 % values when recalibrating)
 
-        patientNumber = 1;
-        unisensDataPath = ['../data/unisens/Pt0' num2str(patientNumber)];
-
-        % create unisens object
-        jUnisensFactory = org.unisens.UnisensFactoryBuilder.createFactory();
-        jUnisens = jUnisensFactory.createUnisens(unisensDataPath);
-
 for eventEntryName = [{'BsBp'},...
                       {'PpgCuff'},...
                       {'PpgClip'}]
