@@ -17,6 +17,11 @@ for patient = 6
     
     %% Preprocessing
     
+    % Downsampling to 200 Hz using MATLAB decimate function with a fir
+    % filter with a Hamming window and order 30.
+    
+    Data = downsampleData(Data,200);
+    
     % Remove powerline artifacts at 50 Hz
     
 %     d = designfilt('bandstopiir','FilterOrder',2, ...
@@ -47,8 +52,18 @@ for patient = 6
 %     plot(ppgCuff_filtered, 'r--');
 
     % filtered data
-    ppgCuff = Data.Signals.PpgCuff.data;
-    ppgClip = Data.Signals.PpgClip.data;
+%     ppgCuff = Data.Signals.PpgCuff.data;
+%     ppgClip = Data.Signals.PpgClip.data;
+%     
+%     ppgClipDs = decimate(ppgClip,5,'fir');
+%     
+%     t = 0:1/1000:(length(ppgClip)-1)/1000;
+%     tDs = 0:1/200:(length(ppgClipDs)-1)/200;
+%     
+%     figure;
+%     plot(t,ppgClip,'b-');
+%     hold on;
+%     plot(tDs,ppgClipDs,'r--');
     
     %% Extraction of single beats
     
@@ -57,34 +72,7 @@ for patient = 6
     % (depending on manufactorer of the pacemaker) artifacts can be removed
     % by searching detections only in a certain time window.
     
-    % fixed paced heartrate (in bpm)
-    heartRate = PopulationData.Data.heartRate(patient);
-    % expected RR-Interval for given heartrate (in samples)
-    rr = round(1/(heartRate/60) * 1000);
-    % 5% of expected RR-Interval as margin to search for beats in samples
-    dr = round(rr*0.05);
-    
-    bpStamp = Data.BeatDetections.BsBp.samplestamp;
-    ppgCuffStamp = Data.BeatDetections.PpgCuff.samplestamp;
-    ppgClipStamp = Data.BeatDetections.PpgClip.samplestamp;
-    
-    
-    
-    beatStamp(1) = bpStamp(1);
-    % Look for detections in PPG cuff and clip signals around first BP beat
-    % detection
-    cuffDetec = ppgCuffStamp(logical( (ppgCuffStamp > beatStamp(1)-dr) .* (ppgCuffStamp < beatStamp(1)+dr) ));
-    clipDetec = ppgClipStamp(logical( (ppgClipStamp > beatStamp(1)-dr) .* (ppgClipStamp < beatStamp(1)+dr) ));
-    
-    if ((length(cuffDetec) == 1) && (length(clipDetec) == 1))
-        beatStamp(1) = round(mean([beatStamp(1) cuffDetec clipDetec]));
-    elseif ((length(cuffDetec) == 1))
-        beatStamp(1) = round(mean([beatStamp(1) cuffDetec]));
-    elseif ((length(clipDetec) == 1))
-        beatStamp(1) = round(mean([beatStamp(1) cuffDetec]));  
-    end
-    
-    clear bpStamp ppgCuffStamp ppgClipStamp
+    extractBeats;
     
     %%
     
