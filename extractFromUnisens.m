@@ -19,7 +19,7 @@ function [ Signals, StimulationModes, BsValues, BeatDetections] = extractFromUni
 %           (from BP-data)
 %
 % Author: Johann Roth
-% Date: 26.11.2015
+% Date: 28.11.2015
 
 unisensDataPath = ['../data/unisens/Pt0' num2str(patientNumber)];
 

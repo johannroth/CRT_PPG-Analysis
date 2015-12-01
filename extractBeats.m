@@ -11,7 +11,7 @@ function [ Beats ] = extractBeats( Data, patient )
 %           Struct containing beats
 %
 % Author: Johann Roth
-% Date: 26.11.2015
+% Date: 01.12.2015
 
     % Beat detections from Labchart and Beatscope are merged to gain
     % maximum information. With constant heartrate of 90 or 100 bpm

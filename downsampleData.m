@@ -11,7 +11,7 @@ function [ DataStructDs ] = downsampleData( DataStruct, targetFs )
 %           samplestamps and fs information
 %
 % Author: Johann Roth
-% Date: 26.11.2015
+% Date: 01.12.2015
 
     DataStructDs = DataStruct;
 
