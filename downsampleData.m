@@ -1,5 +1,5 @@
 function [ DataStructDs ] = downsampleData( DataStruct, targetFs )
-%EXTRACTFROMUNISENS extracts all data from a selected unisens dataset
+%DOWNSAMPLEDATA downsamples data in given data struct
 %   Parameters:
 %       dataStruct (struct)
 %           struct containing data to be downsampled

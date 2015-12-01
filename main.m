@@ -10,16 +10,16 @@ for patient = 6
     fprintf(['Computing data of patient ' num2str(patient) '.\n']);
     
     %% Import data
-    
+    fprintf('..importing unisens data..\n');
     [Data.Signals, Data.StimulationModes, Data.BsValues, Data.BeatDetections] = extractFromUnisens(patient);
     
-    importPatientMetadata;
+    Data.Metadata = importPatientMetadata('..\data\raw\Patient_data.xlsx');
     
     %% Preprocessing
     
     % Downsampling to 200 Hz using MATLAB decimate function with a fir
     % filter with a Hamming window and order 30.
-    
+    fprintf('..downsampling data..\n');
     Data = downsampleData(Data,200);
     
     % Remove powerline artifacts at 50 Hz
@@ -72,7 +72,8 @@ for patient = 6
     % (depending on manufactorer of the pacemaker) artifacts can be removed
     % by searching detections only in a certain time window.
     
-    extractBeats;
+    fprintf('..extracting beats..\n');
+    Beats = extractBeats(Data, patient);
     
     %%
     
