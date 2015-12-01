@@ -1,5 +1,7 @@
 function [ DataStructDs ] = downsampleData( DataStruct, targetFs )
 %DOWNSAMPLEDATA downsamples data in given data struct
+% Downsampling to target sampling frequency using MATLAB 'decimate'
+% function (with a fir filter with a Hamming window and order 30).
 %   Parameters:
 %       dataStruct (struct)
 %           struct containing data to be downsampled
