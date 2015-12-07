@@ -6,7 +6,7 @@
 
 clear;
 
-for patient = 6
+for patient = 1
     fprintf(['Computing patient ' num2str(patient) '.\n']);
     
     %% Import data
@@ -30,7 +30,7 @@ for patient = 6
     % by searching detections only in a certain time window.
     
     fprintf('..extracting beats..\n');
-    Beats = extractBeats(Data, patient);
+    Beats = detectBeats(Data, patient);
     
     %%
     
