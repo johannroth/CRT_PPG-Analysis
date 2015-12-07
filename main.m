@@ -6,7 +6,8 @@
 
 clear;
 
-for patient = 1
+%% Loop through all patients (1-6)
+for patient = 6
     fprintf(['Computing patient ' num2str(patient) '.\n']);
     
     %% Import data
@@ -30,12 +31,14 @@ for patient = 1
     % by searching detections only in a certain time window.
     
     fprintf('..extracting beats..\n');
-    Beats = detectBeats(Data, patient);
+    Data.BeatDetections.Merged.samplestamp = detectBeats(Data, patient);
+    Data.BeatDetections.Merged.fs = Data.BeatDetections.BsBp.fs;
+    
+    %% 
     
     %%
     
     
-%     clear Data;
 end
 
 fprintf('Done!\n');

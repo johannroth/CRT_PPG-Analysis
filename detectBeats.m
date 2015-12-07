@@ -120,5 +120,6 @@ function [ detections ] = detectBeats( Data, patient )
 % %     plot(Beat.clip, 2, 'g*');
 % %     plot(detections, 3, 'c*');
 % %     axis([0,2000,-5,10]);
+    detections = detections(detections>0);
     
 end
