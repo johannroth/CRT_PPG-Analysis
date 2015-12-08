@@ -12,9 +12,10 @@ stairs(Data.Signals.Bp.data);
 %% Plot for waveform comparison of extracted beats
 
 test = extractBeats(Data.Signals.PpgClip.data, ...
-                    Data.BeatDetections.Merged.samplestamp(100:end-100), ...
+                    Data.BeatDetections.Merged.samplestamp(100:110), ...
                     Data.Signals.PpgClip.fs, ...
-                    Data.Metadata.heartRate(patient));
+                    Data.Metadata.heartRate(patient), ...
+                    true);
 t = 0 : 1/Data.Signals.Bp.fs : (size(test,1)-1)/Data.Signals.Bp.fs;
 figure;
 for i = 1:size(test,2)
@@ -26,6 +27,16 @@ xlabel('Time [s]');
 ylabel('Beat number');
 zlabel('Amplitude [a.u.]');
 grid on;
+figure;
+plot(test);
+
+plot(Data.Signals.PpgClip.data);
 
 % mean waveform for all beats:
-plot (mean(test))
+figure;
+plot (mean(test'));
+
+figure;
+plot(test);
+
+mesh(test)

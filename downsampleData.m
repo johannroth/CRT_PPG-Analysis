@@ -21,7 +21,7 @@ function [ DataStructDs ] = downsampleData( DataStruct, targetFs )
                   {'PpgClip'},...
                   {'PpgCuff'}]
 
-        factor = DataStruct.Signals.(char(signalName)).fs/targetFs;
+        factor = round(DataStruct.Signals.(char(signalName)).fs/targetFs);
         DataStructDs.Signals.(char(signalName)).data = ...
             decimate(DataStruct.Signals.(char(signalName)).data,factor,'fir');
         DataStructDs.Signals.(char(signalName)).fs = targetFs;
