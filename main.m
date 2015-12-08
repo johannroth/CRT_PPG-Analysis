@@ -7,7 +7,7 @@
 clear;
 
 %% Loop through all patients (1-6)
-for patient = 3
+for patient = 4
     fprintf(['Computing patient ' num2str(patient) '.\n']);
     
     %% Import data

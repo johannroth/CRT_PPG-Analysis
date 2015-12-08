@@ -12,7 +12,7 @@ stairs(Data.Signals.Bp.data);
 %% Plot for waveform comparison of extracted beats
 
 test = extractBeats(Data.Signals.PpgClip.data, ...
-                    Data.BeatDetections.Merged.samplestamp(100:110), ...
+                    Data.BeatDetections.Merged.samplestamp(100:109), ...
                     Data.Signals.PpgClip.fs, ...
                     Data.Metadata.heartRate(patient), ...
                     true);
@@ -27,8 +27,13 @@ xlabel('Time [s]');
 ylabel('Beat number');
 zlabel('Amplitude [a.u.]');
 grid on;
+title(['Pt' num2str(patient)]);
 figure;
 plot(test);
+title(['Pt' num2str(patient)]);
+figure;
+plot (mean(test,2));
+title(['Pt' num2str(patient)]);
 
 plot(Data.Signals.PpgClip.data);
 
