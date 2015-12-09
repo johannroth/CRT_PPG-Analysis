@@ -1,4 +1,4 @@
-function [ goodBeats, quality ] = extractGoodBeats( beats, fs, heartrate, patient )
+function [ goodBeats, quality ] = extractGoodBeats( beats, fs, heartrate, iPatient )
 %EXTRACTGOODBEATS removes bad beats from a given beats
 % Beats are removed if they diverge strongly from sorrounding beats of if a
 % higher or lower heartrate (i.e. RR-interval) is noticed.
@@ -127,12 +127,12 @@ function [ goodBeats, quality ] = extractGoodBeats( beats, fs, heartrate, patien
         ylabel('Beat number');
         zlabel('Amplitude [a.u.]');
         grid on;
-        title(['Pt' num2str(patient) ' Quality = ' num2str(quality)]);
+        title(['Pt' num2str(iPatient) ' Quality = ' num2str(quality)]);
         figure;
         m = mean(goodBeats,2);
         sd = std(goodBeats,0,2);
         errorbar(m(1:3:end),sd(1:3:end));
-        title(['Pt' num2str(patient) ' Quality = ' num2str(quality) ' (filtered)']);
+        title(['Pt' num2str(iPatient) ' Quality = ' num2str(quality) ' (filtered)']);
     end
 
 end

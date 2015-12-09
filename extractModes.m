@@ -1,11 +1,13 @@
-function [ AV, VV ] = extractModes( Data, patient )
+function [ AV, VV ] = extractModes( Data, Metadata, iPatient )
 %EXTRACTMODES extracts modes and mode changes and returns the information
 % bundled in the structs AV and VV for the corresponding stimulation
 % parameters
 %   Parameters:
 %       Data (struct)
 %           struct containing imported unisens signals of a patient
-%       patient (int)
+%       Metadata (struct)
+%           struct containing metadata of all patients
+%       iPatient (int)
 %           number of the current patient
 %   Returns:
 %       AV (struct)
@@ -28,6 +30,9 @@ function [ AV, VV ] = extractModes( Data, patient )
 %
 % Author: Johann Roth
 % Date: 09.12.2015
+
+AV.refInterval = Data.Metadata.referenceAV(iPatient);
+VV.refInterval = 0;
 
 
 end

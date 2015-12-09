@@ -1,9 +1,11 @@
-function [ detections ] = detectBeats( Data, patient )
+function [ detections ] = detectBeats( Data, Metadata, patient )
 %DETECTBEATS analyses existing beat detections and returns a struct
 %containing single beats as vectors.
 %   Parameters:
 %       Data (struct)
 %           struct containing data to be analysed
+%       Metadata (struct)
+%           struct containing metadata for all patients
 %       patient (int)
 %           number of current patient
 %   Returns:
@@ -23,7 +25,7 @@ function [ detections ] = detectBeats( Data, patient )
     fs = Data.BeatDetections.BsBp.fs;
     
     % fixed paced heartrate (in bpm) and RR-interval (in samples)
-    HR = Data.Metadata.heartRate(patient);
+    HR = Metadata.heartRate(patient);
     RR = round(60/HR * fs);
     % margin in percent of expected RR-Interval to search for beats
     margin = 0.25;

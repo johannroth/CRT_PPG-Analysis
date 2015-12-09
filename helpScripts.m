@@ -1,4 +1,4 @@
-clearvars -except Data patient;
+clearvars -except Data iPatient;
 
 %% plot PpgClip.data + beatDetections (plot + stairs)
 figure;
@@ -24,10 +24,10 @@ samplestampmask = logical((stamp > startSecond*1000/5) .* (stamp < stopSecond*10
 test = extractBeats(Data.Signals.PpgCuff.data, ...
                     Data.BeatDetections.Merged.samplestamp(samplestampmask), ...
                     Data.Signals.PpgClip.fs, ...
-                    Data.Metadata.heartRate(patient), ...
+                    Data.Metadata.heartRate(iPatient), ...
                     true);
 %% ########## Initialize test2 + plot
-[test2, quality] = extractGoodBeats(test,Data.Signals.PpgClip.fs,Data.Metadata.heartRate(patient), patient);
+[test2, quality] = extractGoodBeats(test,Data.Signals.PpgClip.fs,Data.Metadata.heartRate(iPatient), iPatient);
 
 %% 3d plot of beats test2 (without excluded beats)
 t = 0 : 1/Data.Signals.Bp.fs : (size(test2,1)-1)/Data.Signals.Bp.fs;
@@ -41,7 +41,7 @@ xlabel('Time [s]');
 ylabel('Beat number');
 zlabel('Amplitude [a.u.]');
 grid on;
-title(['Pt' num2str(patient)]);
+title(['Pt' num2str(iPatient)]);
 %% 3d plot of beats test
 t = 0 : 1/Data.Signals.Bp.fs : (size(test,1)-1)/Data.Signals.Bp.fs;
 figure;
@@ -54,42 +54,42 @@ xlabel('Time [s]');
 ylabel('Beat number');
 zlabel('Amplitude [a.u.]');
 grid on;
-title(['Pt' num2str(patient)]);
+title(['Pt' num2str(iPatient)]);
 %% plot of all beats overlayed test
 figure;
 plot(test);
-title(['Pt' num2str(patient)]);
+title(['Pt' num2str(iPatient)]);
 %% plot of calculated mean beat test + test2
 figure;
 subplot(2,1,1);
 plot (mean(test,2));
-title(['Pt' num2str(patient)]);
+title(['Pt' num2str(iPatient)]);
 subplot(2,1,2);
 plot (mean(test2,2));
-title(['Pt' num2str(patient)]);
+title(['Pt' num2str(iPatient)]);
 %% plot of calculated median beat test
 figure;
 plot(median(test,2));
-title(['Pt' num2str(patient)]);
+title(['Pt' num2str(iPatient)]);
 
 %% errorbar plot test2
 figure;
 m = mean(test2,2);
 sd = std(test,0,2);
 errorbar(m(1:2:end),sd(1:2:end));
-title(['Pt' num2str(patient) ' raw']);
+title(['Pt' num2str(iPatient) ' raw']);
 %% ########## compressed errorbar plot test + test2
 figure;
 subplot(2,1,1);
 m = mean(test,2);
 sd = std(test,0,2);
 errorbar(m(1:2:end),sd(1:2:end));
-title(['Pt' num2str(patient) ' raw']);
+title(['Pt' num2str(iPatient) ' raw']);
 subplot(2,1,2);
 m = mean(test2,2);
 sd = std(test2,0,2);
 errorbar(m(1:2:end),sd(1:2:end));
-title(['Pt' num2str(patient) ' filtered']);
+title(['Pt' num2str(iPatient) ' filtered']);
 %% boxplot test2
 figure;
 boxplot(test2');

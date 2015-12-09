@@ -6,7 +6,13 @@
 
 clear;
 
+% Patients available for the study (1:6 for all patients of clinical study
+% in Kiel in october/november 2015)
 patient = 1:6;
+
+% force to import unisens data freshly (instead of using a previous import
+% if available)
+FORCEIMPORT = false;
 
 %% Loop through all patients (1-6)
 for iPatient = patient
@@ -16,25 +22,26 @@ for iPatient = patient
     %% Import data
     % use existing imported data if available and not older than a day
     
-    fprintf('..importing unisens data..\n');
-    if exist(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'file')
+    fprintf('..importing unisens data');
+    if exist(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'file') && ~FORCEIMPORT
         Data = load(['../data/matlab/' patientId '/' patientId '_unisensImport.mat']);
         Data = Data.Data;
         if hours(datetime('now') - Data.imported) > 24
             clearvars Data;
             [Data.Signals, Data.StimulationModes, Data.BsValues, Data.BeatDetections] = extractFromUnisens(iPatient);
             Data.imported = datetime('now');
-            Data.Metadata = importPatientMetadata('..\data\raw\Patient_data.xlsx');
             save(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'Data');
         else
-            fprintf('....using existing imported dataset..\n');
+            fprintf(' (using existing imported dataset)');
         end
     else
         [Data.Signals, Data.StimulationModes, Data.BsValues, Data.BeatDetections] = extractFromUnisens(iPatient);
         Data.imported = datetime('now');
-        Data.Metadata = importPatientMetadata('..\data\raw\Patient_data.xlsx');
         save(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'Data');
+
     end
+    fprintf('..\n');
+    Metadata = importPatientMetadata('..\data\raw\Patient_data.xlsx');
 
     %% Preprocessing
     
@@ -54,47 +61,48 @@ for iPatient = patient
     % (depending on manufactorer of the pacemaker) artifacts can be removed
     % by searching detections only in a certain time window.
     
-    fprintf('..extracting beats..\n');
-    Data.BeatDetections.Merged.samplestamp = detectBeats(Data, iPatient);
+    fprintf('..detecting beats..\n');
+    Data.BeatDetections.Merged.samplestamp = detectBeats(Data, Metadata, iPatient);
     Data.BeatDetections.Merged.fs = Data.BeatDetections.BsBp.fs;
     
-    % Plots of sample beats for debugging
-        %% Plot for waveform comparison of extracted beats
-            stamp = Data.BeatDetections.Merged.samplestamp;
-
-            % use this mask to select a specific part of the signal
-            startSecond = 391.848; % coughing in pt3
-            stopSecond = 400.856;
-            samplestampmask = logical((stamp > startSecond*1000/5) .* (stamp < stopSecond*1000/5));
-
-            test = extractBeats(Data.Signals.PpgClip.data, ...
-                                Data.BeatDetections.Merged.samplestamp(samplestampmask), ...
-                                Data.Signals.PpgClip.fs, ...
-                                Data.Metadata.heartRate(iPatient), ...
-                                true);
-            [test2, quality] = extractGoodBeats(test,Data.Signals.PpgClip.fs,Data.Metadata.heartRate(iPatient), iPatient);
-        %% second plot test 
-        stamp = Data.BeatDetections.Merged.samplestamp;
-
-        % use this mask to select a specific part of the signal
-        startSecond = 830; % artifact in pt2
-        stopSecond = 840;
-        samplestampmask = logical((stamp > startSecond*1000/5) .* (stamp < stopSecond*1000/5));
-
-        test = extractBeats(Data.Signals.PpgCuff.data, ...
-                            Data.BeatDetections.Merged.samplestamp(samplestampmask), ...
-                            Data.Signals.PpgClip.fs, ...
-                            Data.Metadata.heartRate(iPatient), ...
-                            true);
-        [test2, quality] = extractGoodBeats(test,Data.Signals.PpgClip.fs,Data.Metadata.heartRate(iPatient), iPatient);
-
+    %% Plots of sample beats for debugging
+%         %% Plot for waveform comparison of extracted beats
+%             stamp = Data.BeatDetections.Merged.samplestamp;
+% 
+%             % use this mask to select a specific part of the signal
+%             startSecond = 391.848; % coughing in pt3
+%             stopSecond = 400.856;
+%             samplestampmask = logical((stamp > startSecond*1000/5) .* (stamp < stopSecond*1000/5));
+% 
+%             test = extractBeats(Data.Signals.PpgClip.data, ...
+%                                 Data.BeatDetections.Merged.samplestamp(samplestampmask), ...
+%                                 Data.Signals.PpgClip.fs, ...
+%                                 Metadata.heartRate(iPatient), ...
+%                                 true);
+%             [test2, quality] = extractGoodBeats(test,Data.Signals.PpgClip.fs,Metadata.heartRate(iPatient), iPatient);
+%         %% second plot test 
+%         stamp = Data.BeatDetections.Merged.samplestamp;
+% 
+%         % use this mask to select a specific part of the signal
+%         startSecond = 830; % artifact in pt2
+%         stopSecond = 840;
+%         samplestampmask = logical((stamp > startSecond*1000/5) .* (stamp < stopSecond*1000/5));
+% 
+%         test = extractBeats(Data.Signals.PpgCuff.data, ...
+%                             Data.BeatDetections.Merged.samplestamp(samplestampmask), ...
+%                             Data.Signals.PpgClip.fs, ...
+%                             Metadata.heartRate(iPatient), ...
+%                             true);
+%         [test2, quality] = extractGoodBeats(test,Data.Signals.PpgClip.fs,Metadata.heartRate(iPatient), iPatient);
+  
     %% Extract Modes and mode changes
     % including stimulation intervals, reference interval, change to or
     % from reference interval and the samplestamp of the mode change
-    Modes.(patientId).AV.refInterval = Data.Metadata.referenceAV(iPatient);
-    Modes.(patientId).VV.refInterval = 0;
+    
+    fprintf('..extracting modes..\n');
+    
     
     
 end
-
+clearvars patientId FORCEIMPORT;
 fprintf('Done!\n');
