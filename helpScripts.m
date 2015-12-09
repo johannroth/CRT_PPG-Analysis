@@ -117,3 +117,14 @@ testGoodBeats = testBeats(:,testGoodBeat);
 
 %% example plot stimulation mode as stairs
 stairs(Data.StimulationModes.AV.samplestamp, Data.StimulationModes.AV.value);
+
+
+%% extractModes test: plot AV and VV.fromRef vs Stimulation mode in data
+figure;
+plot(AV.fromRef',AV.interval, 'cs');
+hold on;
+plot(AV.toRef',AV.interval, 'co');
+stairs(Data.StimulationModes.AV.samplestamp, Data.StimulationModes.AV.value);
+plot(VV.fromRef',VV.interval, 'ms');
+plot(VV.toRef',VV.interval, 'mo');
+stairs(Data.StimulationModes.VV.samplestamp, Data.StimulationModes.VV.value);

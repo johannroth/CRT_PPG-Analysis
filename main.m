@@ -5,7 +5,6 @@
 % Date: 01.12.2015
 
 clear;
-
 % Patients available for the study (1:6 for all patients of clinical study
 % in Kiel in october/november 2015)
 patient = 1:6;
@@ -100,8 +99,11 @@ for iPatient = patient
     % from reference interval and the samplestamp of the mode change
     
     fprintf('..extracting modes..\n');
-    
-    
+    figure;
+    stairs(Data.StimulationModes.VV.samplestamp, Data.StimulationModes.VV.value);
+    hold on;
+    stairs(Data.StimulationModes.AV.samplestamp, Data.StimulationModes.AV.value);
+    title(['Pt' num2str(iPatient)]);
     
 end
 clearvars patientId FORCEIMPORT;
