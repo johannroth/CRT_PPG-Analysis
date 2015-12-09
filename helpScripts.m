@@ -41,7 +41,7 @@ xlabel('Time [s]');
 ylabel('Beat number');
 zlabel('Amplitude [a.u.]');
 grid on;
-title(['Pt' num2str(iPatient)]);
+title(['Pt0' num2str(iPatient)]);
 %% 3d plot of beats test
 t = 0 : 1/Data.Signals.Bp.fs : (size(test,1)-1)/Data.Signals.Bp.fs;
 figure;
@@ -54,23 +54,23 @@ xlabel('Time [s]');
 ylabel('Beat number');
 zlabel('Amplitude [a.u.]');
 grid on;
-title(['Pt' num2str(iPatient)]);
+title(['Pt0' num2str(iPatient)]);
 %% plot of all beats overlayed test
 figure;
 plot(test);
-title(['Pt' num2str(iPatient)]);
+title(['Pt0' num2str(iPatient)]);
 %% plot of calculated mean beat test + test2
 figure;
 subplot(2,1,1);
 plot (mean(test,2));
-title(['Pt' num2str(iPatient)]);
+title(['Pt0' num2str(iPatient)]);
 subplot(2,1,2);
 plot (mean(test2,2));
-title(['Pt' num2str(iPatient)]);
+title(['Pt0' num2str(iPatient)]);
 %% plot of calculated median beat test
 figure;
 plot(median(test,2));
-title(['Pt' num2str(iPatient)]);
+title(['Pt0' num2str(iPatient)]);
 
 %% errorbar plot test2
 figure;
@@ -121,10 +121,10 @@ stairs(Data.StimulationModes.AV.samplestamp, Data.StimulationModes.AV.value);
 
 %% extractModes test: plot AV and VV.fromRef vs Stimulation mode in data
 figure;
-plot(AV.fromRef',AV.interval, 'cs');
+plot(Results.(['Pt0' num2str(iPatient)]).AV.FromRef.stamps',Results.(['Pt0' num2str(iPatient)]).AV.interval, 'cs');
 hold on;
-plot(AV.toRef',AV.interval, 'co');
+plot(Results.(['Pt0' num2str(iPatient)]).AV.ToRef.stamps',Results.(['Pt0' num2str(iPatient)]).AV.interval, 'co');
 stairs(Data.StimulationModes.AV.samplestamp, Data.StimulationModes.AV.value);
-plot(VV.fromRef',VV.interval, 'ms');
-plot(VV.toRef',VV.interval, 'mo');
+plot(Results.(['Pt0' num2str(iPatient)]).VV.FromRef.stamps',Results.(['Pt0' num2str(iPatient)]).VV.interval, 'ms');
+plot(Results.(['Pt0' num2str(iPatient)]).VV.ToRef.stamps',Results.(['Pt0' num2str(iPatient)]).VV.interval, 'mo');
 stairs(Data.StimulationModes.VV.samplestamp, Data.StimulationModes.VV.value);

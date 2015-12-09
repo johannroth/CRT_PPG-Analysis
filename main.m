@@ -1,17 +1,30 @@
 %% Main script for CRT PPG analysis
-%
+% 
+% In the following document the term mode will be used as short term for
+% stimulation mode, i.e. a stimulation setting with certain stimulation
+% parameters (esp. AV- and VV-intervals).
 %
 % Author: Johann Roth
-% Date: 01.12.2015
+% Date: 10.12.2015
 
 clear;
+%% Patient selection (1:6)
 % Patients available for the study (1:6 for all patients of clinical study
 % in Kiel in october/november 2015)
 patient = 1:6;
 
-% force to import unisens data freshly (instead of using a previous import
+%% Parameters
+% Force to import unisens data freshly (instead of using a previous import
 % if available)
 FORCEIMPORT = false;
+
+% Amount of beats before and after each change of the stimulation interval
+% that are included in calculation. Maximum: 15 beats (maximum time: 10s,
+% equals 15 beats with 90 bpm or 16.7 beats with 100 bpm)
+% This value is the maximum possible amount. The amount of beats that are
+% included in the calculation may be smaller due to exclusion of bad beats!
+MAXBEATS = 8; % 3...15 beats
+
 
 %% Loop through all patients (1-6)
 for iPatient = patient
@@ -94,17 +107,17 @@ for iPatient = patient
 %                             true);
 %         [test2, quality] = extractGoodBeats(test,Data.Signals.PpgClip.fs,Metadata.heartRate(iPatient), iPatient);
   
-    %% Extract Modes and mode changes
+    %% Extract Modes and mode changes to 'Results' struct
     % including stimulation intervals, reference interval, change to or
     % from reference interval and the samplestamp of the mode change
+    [Results.(patientId).AV, Results.(patientId).VV] = extractModes(Data,Metadata,iPatient);
     
-    fprintf('..extracting modes..\n');
-    figure;
-    stairs(Data.StimulationModes.VV.samplestamp, Data.StimulationModes.VV.value);
-    hold on;
-    stairs(Data.StimulationModes.AV.samplestamp, Data.StimulationModes.AV.value);
-    title(['Pt' num2str(iPatient)]);
+    %% Extract beats around mode changes (amound defined by MAXBEATS)
+    % here the beats around mode changes are extracted and good beats are
+    % saved to 'Results' struct.
+    
+
     
 end
-clearvars patientId FORCEIMPORT;
+clearvars patientId FORCEIMPORT MAXBEATS;
 fprintf('Done!\n');

@@ -18,7 +18,7 @@ function [ AV, VV ] = extractModes( Data, Metadata, iPatient )
 %               reference interval
 %           AV.interval (vector of doubles [1xN])
 %            used intervals in current patient (N = number of intervals)
-%           AV.toRef / AV.fromRef (matrices of doubles [3xN])
+%           AV.ToRef.stamps / AV.FromRef.stamps (matrices of doubles [3xN])
 %               matrices containing samplestamps of mode changes (either from
 %               test interval to reference or from reference to test interval).
 %               The columns contain 3 mode changes for each of the N intervals.
@@ -59,34 +59,35 @@ VV.interval = sort(VV.interval(VV.interval ~=0));
 
 %% Extract samplestamps of mode changes
 % Initialize samplestamp matrices
-AV.fromRef = zeros(3,length(AV.interval));
-AV.toRef = zeros(3,length(AV.interval));
-VV.fromRef = zeros(3,length(VV.interval));
-VV.toRef = zeros(3,length(VV.interval));
+AV.FromRef.stamps = zeros(3,length(AV.interval));
+AV.ToRef.stamps = zeros(3,length(AV.interval));
+VV.FromRef.stamps = zeros(3,length(VV.interval));
+VV.ToRef.stamps = zeros(3,length(VV.interval));
 
 for i = 1:length(AV.interval)
     valueMask = Data.StimulationModes.AV.value == AV.interval(i);
     samplestampAV = Data.StimulationModes.AV.samplestamp(valueMask);
-    AV.fromRef(:,i) = samplestampAV(1:3);
+    AV.FromRef.stamps(:,i) = samplestampAV(1:3);
     
     % for mode change back to reference mode the value mask is shifted
     % backwards for one value. Next samplestamp is always again the
     % reference interval.
     toRefValueMask = logical([0; valueMask(1:end-1)]);
     samplestampAV = Data.StimulationModes.AV.samplestamp(toRefValueMask);
-    AV.toRef(:,i) = samplestampAV(1:3);
+    AV.ToRef.stamps(:,i) = samplestampAV(1:3);
 end
 
 for i = 1:length(VV.interval)
     valueMask = Data.StimulationModes.VV.value == VV.interval(i);
     samplestampVV = Data.StimulationModes.VV.samplestamp(valueMask);
-    VV.fromRef(:,i) = samplestampVV(1:3);
+    VV.FromRef.stamps(:,i) = samplestampVV(1:3);
+    
     % for mode change back to reference mode the value mask is shifted
     % backwards for one value. Next samplestamp is always again the
     % reference interval.
     toRefValueMask = logical([0; valueMask(1:end-1)]);
     samplestampVV = Data.StimulationModes.VV.samplestamp(toRefValueMask);
-    VV.toRef(:,i) = samplestampVV(1:3);
+    VV.ToRef.stamps(:,i) = samplestampVV(1:3);
 end
 
 
