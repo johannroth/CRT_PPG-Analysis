@@ -13,7 +13,7 @@ function [ beats ] = extractBeats( signal, samplestamps, fs, heartrate, removeDr
 %       removeDrift (bool)
 %           bool to specify if baseline and drift should be removed
 %   Returns:
-%       beats (vector [LxM])
+%       beats (matrix [LxM])
 %           matrix containing single beats (every column is a single beat),
 %           length L of a beat is calculated from expected heart rate
 %
@@ -24,6 +24,8 @@ function [ beats ] = extractBeats( signal, samplestamps, fs, heartrate, removeDr
     MARGIN = 1.2;
     BEATLENGTH = round( 60/heartrate * fs * MARGIN );
     MINAREA = round( 60/heartrate * fs * 0.05 );
+    
+    %% Initialize output matrix
     beats = zeros(BEATLENGTH, length(samplestamps));
 
     %% Loop through all sample stamps
@@ -33,10 +35,7 @@ function [ beats ] = extractBeats( signal, samplestamps, fs, heartrate, removeDr
         [minValue1,minDetection1] = min(signal( samplestamps(i)-MINAREA : samplestamps(i)+MINAREA ));
         minSampleStampAbs1 = samplestamps(i)-MINAREA + minDetection1-1;
 
-
-
-
-        %% Save beat to beats matrix
+        %% Define start and end sample to extract the beat
         beatStart = minSampleStampAbs1 - round( 60/heartrate * fs * (MARGIN-1)/2 );
         beatEnd = beatStart + BEATLENGTH - 1;
 
@@ -59,7 +58,7 @@ function [ beats ] = extractBeats( signal, samplestamps, fs, heartrate, removeDr
         end
     end
 
-    % plot for debugging
+    %% plot for debugging
     % t = 0 : 1/fs : (size(beats,1)-1)/fs;
     % figure;
     % % for i = 1:size(beats,2)
@@ -80,7 +79,6 @@ function [ beats ] = extractBeats( signal, samplestamps, fs, heartrate, removeDr
     % plot( t,(x-minSampleStampRel1).*((minValue2-minValue1)/(minSampleStampRel2-minSampleStampRel1))+minValue1 );
     % figure;
     % plot( t, beats  - minValue1 - (x' - minSampleStampRel1).*((minValue2-minValue1)/(minSampleStampRel2-minSampleStampRel1)) );
-
 
 end
 

@@ -6,16 +6,36 @@
 
 clear;
 
+patient = 1:6;
+
 %% Loop through all patients (1-6)
-for patient = 4
-    fprintf(['Computing patient ' num2str(patient) '.\n']);
+for iPatient = patient
+    fprintf(['Computing patient ' num2str(iPatient) '.\n']);
     
     %% Import data
+    % use existing imported data if available and not older than a day
+    patientId = ['Pt0' int2str(iPatient)];
     fprintf('..importing unisens data..\n');
-    [Data.Signals, Data.StimulationModes, Data.BsValues, Data.BeatDetections] = extractFromUnisens(patient);
-    
-    Data.Metadata = importPatientMetadata('..\data\raw\Patient_data.xlsx');
-    
+    if exist(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'file')
+        Data = load(['../data/matlab/' patientId '/' patientId '_unisensImport.mat']);
+        Data = Data.Data;
+        if hours(datetime('now') - Data.imported) > 24
+            clearvars Data;
+            [Data.Signals, Data.StimulationModes, Data.BsValues, Data.BeatDetections] = extractFromUnisens(iPatient);
+            Data.imported = datetime('now');
+            Data.Metadata = importPatientMetadata('..\data\raw\Patient_data.xlsx');
+            save(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'Data');
+        else
+            fprintf('....using existing imported dataset..\n');
+        end
+    else
+        [Data.Signals, Data.StimulationModes, Data.BsValues, Data.BeatDetections] = extractFromUnisens(iPatient);
+        Data.imported = datetime('now');
+        Data.Metadata = importPatientMetadata('..\data\raw\Patient_data.xlsx');
+        save(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'Data');
+    end
+    clearvars patientId;
+
     %% Preprocessing
     
 %     % Removing power line artifacts around 50 Hz
@@ -27,7 +47,7 @@ for patient = 4
     fprintf('..downsampling data..\n');
     Data = downsampleData(Data,200);
 
-    %% Extraction of single beats
+    %% Detection of single beats (saved to Data.BeatDetections.Merged.samplestamp)
     
     % Beat detections from Labchart and Beatscope are merged to gain
     % maximum information. With constant heartrate of 90 or 100 bpm
@@ -35,12 +55,40 @@ for patient = 4
     % by searching detections only in a certain time window.
     
     fprintf('..extracting beats..\n');
-    Data.BeatDetections.Merged.samplestamp = detectBeats(Data, patient);
+    Data.BeatDetections.Merged.samplestamp = detectBeats(Data, iPatient);
     Data.BeatDetections.Merged.fs = Data.BeatDetections.BsBp.fs;
     
-    %% 
-    
-    %%
+    % Plots of sample beats for debugging
+        %% Plot for waveform comparison of extracted beats
+            stamp = Data.BeatDetections.Merged.samplestamp;
+
+            % use this mask to select a specific part of the signal
+            startSecond = 391.848; % coughing in pt3
+            stopSecond = 400.856;
+            samplestampmask = logical((stamp > startSecond*1000/5) .* (stamp < stopSecond*1000/5));
+
+            test = extractBeats(Data.Signals.PpgClip.data, ...
+                                Data.BeatDetections.Merged.samplestamp(samplestampmask), ...
+                                Data.Signals.PpgClip.fs, ...
+                                Data.Metadata.heartRate(iPatient), ...
+                                true);
+            [test2, quality] = extractGoodBeats(test,Data.Signals.PpgClip.fs,Data.Metadata.heartRate(iPatient), iPatient);
+        %% second plot test 
+        stamp = Data.BeatDetections.Merged.samplestamp;
+
+        % use this mask to select a specific part of the signal
+        startSecond = 830; % artifact in pt2
+        stopSecond = 840;
+        samplestampmask = logical((stamp > startSecond*1000/5) .* (stamp < stopSecond*1000/5));
+
+        test = extractBeats(Data.Signals.PpgCuff.data, ...
+                            Data.BeatDetections.Merged.samplestamp(samplestampmask), ...
+                            Data.Signals.PpgClip.fs, ...
+                            Data.Metadata.heartRate(iPatient), ...
+                            true);
+        [test2, quality] = extractGoodBeats(test,Data.Signals.PpgClip.fs,Data.Metadata.heartRate(iPatient), iPatient);
+
+    %% Initialize struct for results of signal analysis
     
     
 end
