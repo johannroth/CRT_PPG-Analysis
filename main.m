@@ -11,10 +11,11 @@ patient = 1:6;
 %% Loop through all patients (1-6)
 for iPatient = patient
     fprintf(['Computing patient ' num2str(iPatient) '.\n']);
+    patientId = ['Pt0' int2str(iPatient)];
     
     %% Import data
     % use existing imported data if available and not older than a day
-    patientId = ['Pt0' int2str(iPatient)];
+    
     fprintf('..importing unisens data..\n');
     if exist(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'file')
         Data = load(['../data/matlab/' patientId '/' patientId '_unisensImport.mat']);
@@ -34,7 +35,6 @@ for iPatient = patient
         Data.Metadata = importPatientMetadata('..\data\raw\Patient_data.xlsx');
         save(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'Data');
     end
-    clearvars patientId;
 
     %% Preprocessing
     
@@ -88,7 +88,11 @@ for iPatient = patient
                             true);
         [test2, quality] = extractGoodBeats(test,Data.Signals.PpgClip.fs,Data.Metadata.heartRate(iPatient), iPatient);
 
-    %% Initialize struct for results of signal analysis
+    %% Extract Modes and mode changes
+    % including stimulation intervals, reference interval, change to or
+    % from reference interval and the samplestamp of the mode change
+    Modes.(patientId).AV.refInterval = Data.Metadata.referenceAV(iPatient);
+    Modes.(patientId).VV.refInterval = 0;
     
     
 end

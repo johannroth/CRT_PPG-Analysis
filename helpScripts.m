@@ -114,3 +114,6 @@ testBeats = [10 20 30 40 50;11 21 31 41 51; 12 22 32 42 52];
 testGoodBeat = [1 0 3 4 0];
 testGoodBeat(testGoodBeat == 0) = [];
 testGoodBeats = testBeats(:,testGoodBeat);
+
+%% example plot stimulation mode as stairs
+stairs(Data.StimulationModes.AV.samplestamp, Data.StimulationModes.AV.value);
