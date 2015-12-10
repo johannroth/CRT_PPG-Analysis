@@ -3,8 +3,14 @@
 %
 % Author: Johann Roth
 % Date: 09.12.2015
+oldpath = path;
+addpath('rawToUnisensConversion');
 
 readRawData;
 convertRawData;
 createUnisensFiles;
+
+rmpath('rawToUnisensConversion');
+path(oldpath);
+
 clear;

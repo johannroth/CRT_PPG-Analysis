@@ -67,7 +67,7 @@ for currentFlank = [{'FromRef'},{'ToRef'}]
     nIntervals = length(AV.interval);
     for currentSignal = [{'PpgClip'},{'PpgCuff'}]
         AV.(char(currentFlank)).(char(currentSignal)).beats = cell(3,2,nIntervals);
-        AV.(char(currentFlank)).(char(currentSignal)).beatQuality = zeros(3,2,nIntervals);
+        AV.(char(currentFlank)).(char(currentSignal)).quality = zeros(3,2,nIntervals);
     end
 
     %% Go through all stimulation intervals
@@ -100,7 +100,7 @@ for currentFlank = [{'FromRef'},{'ToRef'}]
                          true);
                 [includedGoodBeats, quality] = extractGoodBeats(includedBeats, fs, heartRate, iPatient);
                 AV.(char(currentFlank)).(char(currentSignal)).beats{iChange,1,iInterval} = includedGoodBeats;
-                AV.(char(currentFlank)).(char(currentSignal)).quality{iChange,1,iInterval} = quality;
+                AV.(char(currentFlank)).(char(currentSignal)).quality(iChange,1,iInterval) = quality;
             end
             
             %% Select detections for beats AFTER a mode change
@@ -127,7 +127,7 @@ for currentFlank = [{'FromRef'},{'ToRef'}]
                          true);
                 [includedGoodBeats, quality] = extractGoodBeats(includedBeats, fs, heartRate, iPatient);
                 AV.(char(currentFlank)).(char(currentSignal)).beats{iChange,2,iInterval} = includedGoodBeats;
-                AV.(char(currentFlank)).(char(currentSignal)).quality{iChange,2,iInterval} = quality;
+                AV.(char(currentFlank)).(char(currentSignal)).quality(iChange,2,iInterval) = quality;
             end
             
         end
@@ -176,7 +176,7 @@ for currentFlank = [{'FromRef'},{'ToRef'}]
                          true);
                 [includedGoodBeats, quality] = extractGoodBeats(includedBeats, fs, heartRate, iPatient);
                 VV.(char(currentFlank)).(char(currentSignal)).beats{iChange,1,iInterval} = includedGoodBeats;
-                VV.(char(currentFlank)).(char(currentSignal)).quality{iChange,1,iInterval} = quality;
+                VV.(char(currentFlank)).(char(currentSignal)).quality(iChange,1,iInterval) = quality;
             end
             
             %% Select detections for beats AFTER a mode change
@@ -203,7 +203,7 @@ for currentFlank = [{'FromRef'},{'ToRef'}]
                          true);
                 [includedGoodBeats, quality] = extractGoodBeats(includedBeats, fs, heartRate, iPatient);
                 VV.(char(currentFlank)).(char(currentSignal)).beats{iChange,2,iInterval} = includedGoodBeats;
-                VV.(char(currentFlank)).(char(currentSignal)).quality{iChange,2,iInterval} = quality;
+                VV.(char(currentFlank)).(char(currentSignal)).quality(iChange,2,iInterval) = quality;
             end
             
         end

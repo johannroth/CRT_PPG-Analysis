@@ -174,17 +174,12 @@ plot(Data.Signals.PpgClip.data, 'k:');
 
 
 
-
-
-
-
 %% test to put matrices in cell arrays
 testCellArray = cell(3,5);
 testMatrix = magic(4);
 testCellArray{1,1} = magic(4);
 % get frist element of first matrix
 testCellArray{1,1}(1,1);
-
 %% test for loop
 testTarget1 = [1 2 3];
 testTarget2 = [4 5 6];
@@ -201,9 +196,67 @@ for loopTarget = [{'testTarget1'},{'testTarget2'}]
             fprintf('Error');
     end
 end
-
 %% test
 testQuality = Results.Pt06.AV.FromRef.PpgClip.quality(:,1,:);
 test = cell2mat(testQuality(:));
 plot(Results.Pt06.AV.FromRef.PpgClip.quality{1,1,2})
+%% test for invisible plotting
+qualityPlot = figure('Visible','off');
+plot(1:100)
+set(qualityPlot, 'visible', 'on')
+close(qualityPlot)
+% saveas(gcf,'file.fig','fig')
+% 
+% openfig('file.fig','new','visible')
 
+%% test for folders in working directory
+try
+    testfunction;
+catch
+    fprintf('first try failed');
+end
+addpath('testfolder');
+testfunction;
+rmpath('testfolder');
+try
+    testfunction;
+catch
+    fprintf('second try failed');
+end
+
+
+%% test for quality plots
+% AV + VV plots. each ~10 intervals, 6 changes (3 fromRef, 3 toRef),
+% before/after change each = 10*6*2 = 120 plots
+% Organisation of subplots:
+%   Rows: contain beats from certain intervals
+%   Columns contain the 12
+%
+% beats{change, before/after, interval}
+figure;
+subplot(2,1,1);
+testBeat = Results.Pt06.AV.FromRef.PpgClip.beats{1,1,1};
+fs = Data.fs;
+t = 0:1/fs:(length(testBeat)-1)/fs;
+testBeatMean = mean(testBeat,2);
+testBeatSd = std(testBeat,0,2);
+errorbar(t(1:2:end),testBeatMean(1:2:end),testBeatSd(1:2:end));
+axis([0,0.7,-inf,inf]);
+quality = Results.Pt06.AV.FromRef.PpgClip.quality(1,1,1);
+text(t(end)*0.9,max(testBeatMean)*0.9, {['Q = ' num2str(quality)], 'test'} , 'HorizontalAlignment','right');
+ax = gca;
+ax.XAxis.Visibility = 'off';
+
+subplot(2,1,2);
+testBeat = Results.Pt06.AV.FromRef.PpgClip.beats{2,2,4};
+fs = Data.fs;
+t = 0:1/fs:(length(testBeat)-1)/fs;
+testBeatMean = mean(testBeat,2);
+testBeatSd = std(testBeat,0,2);
+errorbar(t(1:2:end),testBeatMean(1:2:end),testBeatSd(1:2:end));
+axis([0,0.7,-inf,inf]);
+quality = Results.Pt06.AV.FromRef.PpgClip.quality(2,2,4);
+text(t(end)*0.9,max(testBeatMean)*0.9, ['Q = ' num2str(quality)] , 'HorizontalAlignment','right');
+
+
+-

@@ -13,6 +13,10 @@
 % Date: 10.12.2015
 
 clear;
+%% Add folders to path to find scripts
+oldpath = path;
+addpath('dataImport','plots','preprocessing','signalAnalysis','unisens');
+
 %% Patient selection (1:6)
 % Patients available for the study (1:6 for all patients of clinical study
 % in Kiel in october/november 2015)
@@ -22,6 +26,9 @@ patient = 1:6;
 % Force to import unisens data freshly (instead of using a previous import
 % if available)
 FORCEIMPORT = false;
+
+% create quality plots
+QUALITYPLOTS = true;
 
 % Amount of beats before and after each change of the stimulation interval
 % that are included in calculation. Maximum: 15 beats (maximum time: 10s,
@@ -141,10 +148,21 @@ for iPatient = patient
                                 EXCLUDEBEATS );
 
     %% Create plots for quality control and save them to ../results/plots
-                            
+    % plots are not opened.
+    fprintf('..creating plots..\n');
+    fprintf('....creating quality plots..\n');
+    if QUALITYPLOTS
+        qualityPlots( Data, Metadata, Results, iPatient, MAXBEATS, EXCLUDEBEATS );
+    end
+    
     %% Analysis
 %     fprintf('..analysing beats..\n');
     
 end
-clearvars patientId FORCEIMPORT MAXBEATS EXCLUDEBEATS;
+
+
+%% Restore old path
+path(oldpath);
+
+% clearvars patientId FORCEIMPORT MAXBEATS EXCLUDEBEATS oldpath;
 fprintf('Done!\n');
