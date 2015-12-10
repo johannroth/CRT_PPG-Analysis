@@ -25,7 +25,7 @@ function [ AV, VV ] = extractModes( Data, Metadata, iPatient )
 %
 %       VV (struct)
 %           struct containing used intervals, reference interval and stamps
-%           of mode changes to and from reference mode. Analog to VV
+%           of mode changes to and from reference mode. Analog to AV
 %           stimulation modes.
 %
 % Author: Johann Roth

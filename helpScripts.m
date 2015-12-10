@@ -24,10 +24,10 @@ samplestampmask = logical((stamp > startSecond*1000/5) .* (stamp < stopSecond*10
 test = extractBeats(Data.Signals.PpgCuff.data, ...
                     Data.BeatDetections.Merged.samplestamp(samplestampmask), ...
                     Data.Signals.PpgClip.fs, ...
-                    Data.Metadata.heartRate(iPatient), ...
+                    Metadata.heartRate(iPatient), ...
                     true);
 %% ########## Initialize test2 + plot
-[test2, quality] = extractGoodBeats(test,Data.Signals.PpgClip.fs,Data.Metadata.heartRate(iPatient), iPatient);
+[test2,~, quality] = extractGoodBeats(test,Data.Signals.PpgClip.fs,Metadata.heartRate(iPatient), iPatient);
 
 %% 3d plot of beats test2 (without excluded beats)
 t = 0 : 1/Data.Signals.Bp.fs : (size(test2,1)-1)/Data.Signals.Bp.fs;
@@ -119,6 +119,44 @@ testGoodBeats = testBeats(:,testGoodBeat);
 stairs(Data.StimulationModes.AV.samplestamp, Data.StimulationModes.AV.value);
 
 
+
+%% initialize data to test extractModeChangeBeats script after running main
+patientId = ['Pt0' num2str(iPatient)];
+ModeAV = Results.(patientId).AV;
+ModeVV = Results.(patientId).VV;
+AV = ModeAV;
+VV = ModeVV;
+MAXBEATS = 8;
+EXCLUDEBEATS = 2;
+heartRate = Metadata.heartRate(iPatient);
+rrInterval = 60/heartRate;
+fs = Data.fs;
+%% run test analysis for beat extraction
+iChange = 1;
+iInterval = 1;
+%%
+firstPossibleSample = AV.FromRef.stamps(iChange, iInterval) + ...
+                      rrInterval*EXCLUDEBEATS*fs;
+lastPossibleSample = AV.FromRef.stamps(iChange, iInterval) + ...
+                     (MAXBEATS)*rrInterval*fs;                 
+                 
+detectionMask = logical( ...
+    (Data.BeatDetections.Merged.samplestamp > firstPossibleSample) .* ...
+    (Data.BeatDetections.Merged.samplestamp < lastPossibleSample)...
+                );
+detections = Data.BeatDetections.Merged.samplestamp(detectionMask);
+while length(detections) > MAXBEATS-EXCLUDEBEATS
+    detections = detections(1:end-1);
+end
+
+currentSignal = {'PpgClip'};
+
+includedBeats = extractBeats(Data.Signals.(char(currentSignal)).data,...
+                         detections,...
+                         fs,...
+                         heartRate,...
+                         true);
+[includedGoodBeats, quality] = extractGoodBeats(includedBeats, fs, heartRate, iPatient);
 %% extractModes test: plot AV and VV.fromRef vs Stimulation mode in data
 figure;
 plot(Results.(['Pt0' num2str(iPatient)]).AV.FromRef.stamps',Results.(['Pt0' num2str(iPatient)]).AV.interval, 'cs');
@@ -128,3 +166,44 @@ stairs(Data.StimulationModes.AV.samplestamp, Data.StimulationModes.AV.value);
 plot(Results.(['Pt0' num2str(iPatient)]).VV.FromRef.stamps',Results.(['Pt0' num2str(iPatient)]).VV.interval, 'ms');
 plot(Results.(['Pt0' num2str(iPatient)]).VV.ToRef.stamps',Results.(['Pt0' num2str(iPatient)]).VV.interval, 'mo');
 stairs(Data.StimulationModes.VV.samplestamp, Data.StimulationModes.VV.value);
+
+plot(firstPossibleSample,40,'r*');
+plot(lastPossibleSample,40,'r*');
+plot(detections,Data.Signals.PpgClip.data(detections),'rs');
+plot(Data.Signals.PpgClip.data, 'k:');
+
+
+
+
+
+
+
+%% test to put matrices in cell arrays
+testCellArray = cell(3,5);
+testMatrix = magic(4);
+testCellArray{1,1} = magic(4);
+% get frist element of first matrix
+testCellArray{1,1}(1,1);
+
+%% test for loop
+testTarget1 = [1 2 3];
+testTarget2 = [4 5 6];
+for loopTarget = [{'testTarget1'},{'testTarget2'}]
+    if strcmp(loopTarget, 'testTarget2')
+        fprintf([char(loopTarget) '\n']);
+    end
+    switch char(loopTarget)
+        case 'testTarget2'
+            fprintf([char(loopTarget) '\n']);
+        case 'testTarget1'
+            fprintf([char(loopTarget) '\n']);
+        otherwise
+            fprintf('Error');
+    end
+end
+
+%% test
+testQuality = Results.Pt06.AV.FromRef.PpgClip.quality(:,1,:);
+test = cell2mat(testQuality(:));
+plot(Results.Pt06.AV.FromRef.PpgClip.quality{1,1,2})
+

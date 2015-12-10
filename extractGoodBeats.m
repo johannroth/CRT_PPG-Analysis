@@ -14,10 +14,13 @@ function [ goodBeats, quality ] = extractGoodBeats( beats, fs, heartrate, iPatie
 %       patient (double)
 %           patient number
 %   Returns:
-%       goodBeats (matrix [LxM])
-%           matrix containing only good single beats (every column is a
-%           single beat), length L of a beat is calculated from expected
-%           heart rate
+%       goodBeats (matrix [LxN])
+%           matrix containing N good single beats of the M beats (every
+%           column is a single beat), length L of a beat is calculated from
+%           expected heart rate
+%       beatMask (double [1xN])
+%           vector containing the indices of beats that are classified as
+%           good beats (indices refering to columns in beats matrix)
 %       quality (double 0...1)
 %           percentage of kept beats
 %
@@ -26,7 +29,7 @@ function [ goodBeats, quality ] = extractGoodBeats( beats, fs, heartrate, iPatie
 
     DEBUG = false;
 
-    %% Calculate overall beat statistics
+    %% Calculate overall beat parameters
 
     quantile25Beat = quantile(beats,0.25,2);
     quantile75Beat = quantile(beats,0.75,2);
@@ -34,6 +37,8 @@ function [ goodBeats, quality ] = extractGoodBeats( beats, fs, heartrate, iPatie
     
     expectedRR = 60/heartrate; % in s
     expectedBeatLength = round(expectedRR * fs); % in samples
+    % margin equals half the MARGIN of extractBeats i.e. the one-sided
+    % margin.
     margin = round(expectedBeatLength*0.1);
 
     %% Initialize mask to remove beats
@@ -69,7 +74,7 @@ function [ goodBeats, quality ] = extractGoodBeats( beats, fs, heartrate, iPatie
         % the second minimum may not be before a certain point in the
         % beat
         [~, index] = min(beats(end/2:end,i));
-        if ( index < (length(beats(end/2:end,i))-1.6*margin) )
+        if ( index < (length(beats(end/2:end,i))-1.3*margin) )
             goodBeat(i) = 0;
             continue;
         end
@@ -119,6 +124,7 @@ function [ goodBeats, quality ] = extractGoodBeats( beats, fs, heartrate, iPatie
     goodBeat(goodBeat == 0) = [];
     goodBeats = beats(:,goodBeat);
     quality = size(goodBeats,2)/size(beats,2);
+%     beatMask = goodBeat;
     
     %% continued: plots for debugging
     if DEBUG

@@ -3,6 +3,11 @@
 % In the following document the term mode will be used as short term for
 % stimulation mode, i.e. a stimulation setting with certain stimulation
 % parameters (esp. AV- and VV-intervals).
+% 
+% Calculations are based on the Unisens dataset (see section Import data).
+% Unisens dataset has been imported by script rawToUnisens.m (calling
+% several subscripts). Conversion of raw data to unisens dataset takes up
+% to 20 minutes (for 6 patients).
 %
 % Author: Johann Roth
 % Date: 10.12.2015
@@ -24,6 +29,13 @@ FORCEIMPORT = false;
 % This value is the maximum possible amount. The amount of beats that are
 % included in the calculation may be smaller due to exclusion of bad beats!
 MAXBEATS = 8; % 3...15 beats
+Results.Info.maxbeats = MAXBEATS;
+
+% Amount of beats directly before or after the change of interval to be
+% excluded. The maximum amount of beats will be lowered by excluding the
+% 'inner' beats around a change of interval
+EXCLUDEBEATS = 0; % 0...MAXBEATS-3
+Results.Info.excludebeats = EXCLUDEBEATS;
 
 
 %% Loop through all patients (1-6)
@@ -42,6 +54,7 @@ for iPatient = patient
             clearvars Data;
             [Data.Signals, Data.StimulationModes, Data.BsValues, Data.BeatDetections] = extractFromUnisens(iPatient);
             Data.imported = datetime('now');
+            Data.patient = iPatient;
             save(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'Data');
         else
             fprintf(' (using existing imported dataset)');
@@ -49,8 +62,8 @@ for iPatient = patient
     else
         [Data.Signals, Data.StimulationModes, Data.BsValues, Data.BeatDetections] = extractFromUnisens(iPatient);
         Data.imported = datetime('now');
+        Data.patient = iPatient;
         save(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'Data');
-
     end
     fprintf('..\n');
     Metadata = importPatientMetadata('..\data\raw\Patient_data.xlsx');
@@ -63,8 +76,9 @@ for iPatient = patient
     
     % Downsampling to 200 Hz using MATLAB decimate function with a fir
     % filter with a Hamming window and order 30.
+    Data.fs = 200; % Hz, target sampling frequency for downsampling
     fprintf('..downsampling data..\n');
-    Data = downsampleData(Data,200);
+    Data = downsampleData(Data,Data.fs);
 
     %% Detection of single beats (saved to Data.BeatDetections.Merged.samplestamp)
     
@@ -112,12 +126,25 @@ for iPatient = patient
     % from reference interval and the samplestamp of the mode change
     [Results.(patientId).AV, Results.(patientId).VV] = extractModes(Data,Metadata,iPatient);
     
+    
     %% Extract beats around mode changes (amound defined by MAXBEATS)
     % here the beats around mode changes are extracted and good beats are
     % saved to 'Results' struct.
-    
+    fprintf('..selecting beats..\n');
+    [ Results.(patientId).AV, Results.(patientId).VV ] = ...
+        extractModeChangeBeats( Results.(patientId).AV, ...
+                                Results.(patientId).VV, ...
+                                Data, ...
+                                Metadata, ...
+                                iPatient, ...
+                                MAXBEATS, ...
+                                EXCLUDEBEATS );
 
+    %% Create plots for quality control and save them to ../results/plots
+                            
+    %% Analysis
+%     fprintf('..analysing beats..\n');
     
 end
-clearvars patientId FORCEIMPORT MAXBEATS;
+clearvars patientId FORCEIMPORT MAXBEATS EXCLUDEBEATS;
 fprintf('Done!\n');
