@@ -51,7 +51,7 @@ function [ beats ] = extractBeats( signal, samplestamps, fs, heartrate, removeDr
         % a beat. Equation: y = (x-x1)* (y2-y1)/(x2-x1) + y1
         x = 1:BEATLENGTH;
         if ~removeDrift
-            beats(:,i) = signal(beatStart:beatEnd) - minValue1;
+            beats(:,i) = signal(beatStart:beatEnd);
         else
             beats(:,i) = signal(beatStart:beatEnd) - minValue1 - ...
                 (x' - minSampleStampRel1).*((minValue2-minValue1)/(minSampleStampRel2-minSampleStampRel1));

@@ -34,6 +34,11 @@ function [ AV, VV ] = extractModeChangeBeats( ModeAV, ModeVV, Data, Metadata, iP
 %               the amount of modes and M is the amount of beats (3
 %               repetitions per change of stimulation interval, 2 analyzed
 %               areas: before and after change)
+%           ToRef.PpgClip.meanBeat (cell array [3 x 2 x N])
+%               containing vectors of double [BEATLENGTH x 1] with the
+%               calculated mean beat. (3 repetitions per change of
+%               stimulation interval, 2 analyzed areas: before and after
+%               change)
 %
 %           ToRef.PpgClip.beatQuality (array [3 x 2 x N])
 %               containing quality values for selected beats (representing
@@ -50,164 +55,106 @@ function [ AV, VV ] = extractModeChangeBeats( ModeAV, ModeVV, Data, Metadata, iP
 % Date: 07.12.2015
 
 %% Keep information in existing structs
-AV = ModeAV;
-VV = ModeVV;
+out.AV = ModeAV;
+out.VV = ModeVV;
 
 %% Calculate parameters for current patient
 heartRate = Metadata.heartRate(iPatient);
 rrInterval = 60/heartRate;
 fs = Data.fs;
 
-%% AV mode is calculated first
-% Same extraction algorithm is used to extract beats for both flanks
-for currentFlank = [{'FromRef'},{'ToRef'}]
+for currentMode = [{'AV'},{'VV'}]
+    % Same extraction algorithm is used to extract beats for both flanks
+    for currentFlank = [{'FromRef'},{'ToRef'}]
+        
+%         switch char(currentFlank)
+%             case 'FromRef'
+%                 fprintf([char(loopTarget) '\n']);
+%             case 'ToRef'
+%                 fprintf([char(loopTarget) '\n']);
+%             otherwise
+%                 fprintf('Error!');
+%         end
 
-    %% Initialize cell arrays
-    % amount of mode changes
-    nIntervals = length(AV.interval);
-    for currentSignal = [{'PpgClip'},{'PpgCuff'}]
-        AV.(char(currentFlank)).(char(currentSignal)).beats = cell(3,2,nIntervals);
-        AV.(char(currentFlank)).(char(currentSignal)).quality = zeros(3,2,nIntervals);
-    end
+        %% Initialize cell arrays
+        % amount of mode changes
+        nIntervals = length(out.(char(currentMode)).interval);
+        for currentSignal = [{'PpgClip'},{'PpgCuff'}]
+            out.(char(currentMode)).(char(currentFlank)).(char(currentSignal)).beats = cell(3,2,nIntervals);
+            out.(char(currentMode)).(char(currentFlank)).(char(currentSignal)).quality = zeros(3,2,nIntervals);
+            out.(char(currentMode)).(char(currentFlank)).(char(currentSignal)).meanBeat = cell(3,2,nIntervals);
+        end
 
-    %% Go through all stimulation intervals
-    for iInterval = 1:nIntervals
-        %% Go through all 3 mode changes in the current interval
-        for iChange = 1:3
-            %% Select detections for beats BEFORE a mode change
+        %% Go through all stimulation intervals
+        for iInterval = 1:nIntervals
+            %% Go through all 3 mode changes in the current interval
+            for iChange = 1:3
+                %% Select detections for beats BEFORE a mode change
 
-            lastPossibleSample = AV.FromRef.stamps(iChange, iInterval) - ...
-                                 rrInterval*fs - ...
-                                 rrInterval*EXCLUDEBEATS*fs;
-            firstPossibleSample = AV.FromRef.stamps(iChange, iInterval) - ...
-                                 rrInterval*fs - ...
-                                 (MAXBEATS+0.5) * rrInterval * fs;
-            detectionMask = logical( ...
-                (Data.BeatDetections.Merged.samplestamp > firstPossibleSample) .* ...
-                (Data.BeatDetections.Merged.samplestamp < lastPossibleSample) );
-            
-            detections = Data.BeatDetections.Merged.samplestamp(detectionMask);
-            while length(detections) > MAXBEATS-EXCLUDEBEATS
-                detections = detections(2:end);
+                lastPossibleSample = out.(char(currentMode)).(char(currentFlank)).stamps(iChange, iInterval) - ...
+                                     rrInterval*fs - ...
+                                     rrInterval*EXCLUDEBEATS*fs;
+                firstPossibleSample = out.(char(currentMode)).(char(currentFlank)).stamps(iChange, iInterval) - ...
+                                     rrInterval*fs - ...
+                                     (MAXBEATS+0.5) * rrInterval * fs;
+                detectionMask = logical( ...
+                    (Data.BeatDetections.Merged.samplestamp > firstPossibleSample) .* ...
+                    (Data.BeatDetections.Merged.samplestamp < lastPossibleSample) );
+
+                detections = Data.BeatDetections.Merged.samplestamp(detectionMask);
+                while length(detections) > MAXBEATS-EXCLUDEBEATS
+                    detections = detections(2:end);
+                end
+
+                % Make Calculations for both signals
+                for currentSignal = [{'PpgClip'},{'PpgCuff'}]
+                    includedBeats = extractBeats(Data.Signals.(char(currentSignal)).data,...
+                             detections,...
+                             fs,...
+                             heartRate,...
+                             true);
+                    [includedGoodBeats, quality] = extractGoodBeats(includedBeats, fs, heartRate, iPatient);
+                    out.(char(currentMode)).(char(currentFlank)).(char(currentSignal)).beats{iChange,1,iInterval} = includedGoodBeats;
+                    out.(char(currentMode)).(char(currentFlank)).(char(currentSignal)).meanBeat{iChange,1,iInterval} = mean(includedGoodBeats,2);
+                    out.(char(currentMode)).(char(currentFlank)).(char(currentSignal)).quality(iChange,1,iInterval) = quality;
+                end
+
+                %% Select detections for beats AFTER a mode change
+
+                firstPossibleSample = out.(char(currentMode)).(char(currentFlank)).stamps(iChange, iInterval) + ...
+                                      rrInterval*EXCLUDEBEATS*fs;
+                lastPossibleSample = out.(char(currentMode)).(char(currentFlank)).stamps(iChange, iInterval) + ...
+                                     (MAXBEATS)*rrInterval*fs; 
+                detectionMask = logical( ...
+                    (Data.BeatDetections.Merged.samplestamp > firstPossibleSample) .* ...
+                    (Data.BeatDetections.Merged.samplestamp < lastPossibleSample) );
+
+                detections = Data.BeatDetections.Merged.samplestamp(detectionMask);
+                while length(detections) > MAXBEATS-EXCLUDEBEATS
+                    detections = detections(1:end-1);
+                end
+
+                % Make Calculations for both signals
+                for currentSignal = [{'PpgClip'},{'PpgCuff'}]
+                    includedBeats = extractBeats(Data.Signals.(char(currentSignal)).data,...
+                             detections,...
+                             fs,...
+                             heartRate,...
+                             true);
+                    [includedGoodBeats, quality] = extractGoodBeats(includedBeats, fs, heartRate, iPatient);
+                    out.(char(currentMode)).(char(currentFlank)).(char(currentSignal)).beats{iChange,2,iInterval} = includedGoodBeats;
+                    out.(char(currentMode)).(char(currentFlank)).(char(currentSignal)).meanBeat{iChange,2,iInterval} = mean(includedGoodBeats,2);
+                    out.(char(currentMode)).(char(currentFlank)).(char(currentSignal)).quality(iChange,2,iInterval) = quality;
+                end
+
             end
-
-            % Make Calculations for both signals
-            for currentSignal = [{'PpgClip'},{'PpgCuff'}]
-                includedBeats = extractBeats(Data.Signals.(char(currentSignal)).data,...
-                         detections,...
-                         fs,...
-                         heartRate,...
-                         true);
-                [includedGoodBeats, quality] = extractGoodBeats(includedBeats, fs, heartRate, iPatient);
-                AV.(char(currentFlank)).(char(currentSignal)).beats{iChange,1,iInterval} = includedGoodBeats;
-                AV.(char(currentFlank)).(char(currentSignal)).quality(iChange,1,iInterval) = quality;
-            end
-            
-            %% Select detections for beats AFTER a mode change
-            
-            firstPossibleSample = AV.FromRef.stamps(iChange, iInterval) + ...
-                                  rrInterval*EXCLUDEBEATS*fs;
-            lastPossibleSample = AV.FromRef.stamps(iChange, iInterval) + ...
-                                 (MAXBEATS)*rrInterval*fs; 
-            detectionMask = logical( ...
-                (Data.BeatDetections.Merged.samplestamp > firstPossibleSample) .* ...
-                (Data.BeatDetections.Merged.samplestamp < lastPossibleSample) );
-            
-            detections = Data.BeatDetections.Merged.samplestamp(detectionMask);
-            while length(detections) > MAXBEATS-EXCLUDEBEATS
-                detections = detections(1:end-1);
-            end
-
-            % Make Calculations for both signals
-            for currentSignal = [{'PpgClip'},{'PpgCuff'}]
-                includedBeats = extractBeats(Data.Signals.(char(currentSignal)).data,...
-                         detections,...
-                         fs,...
-                         heartRate,...
-                         true);
-                [includedGoodBeats, quality] = extractGoodBeats(includedBeats, fs, heartRate, iPatient);
-                AV.(char(currentFlank)).(char(currentSignal)).beats{iChange,2,iInterval} = includedGoodBeats;
-                AV.(char(currentFlank)).(char(currentSignal)).quality(iChange,2,iInterval) = quality;
-            end
-            
         end
     end
 end
 
-%% VV mode is calculated second, same algorithm as for AV mode
-% Same extraction algorithm is used to extract beats for both flanks
-for currentFlank = [{'FromRef'},{'ToRef'}]
+AV = out.AV;
+VV = out.VV;
 
-    %% Initialize cell arrays
-    % amount of mode changes
-    nIntervals = length(VV.interval);
-    for currentSignal = [{'PpgClip'},{'PpgCuff'}]
-        VV.(char(currentFlank)).(char(currentSignal)).beats = cell(3,2,nIntervals);
-        VV.(char(currentFlank)).(char(currentSignal)).beatQuality = zeros(3,2,nIntervals);
-    end
 
-    %% Go through all stimulation intervals
-    for iInterval = 1:nIntervals
-        %% Go through all 3 mode changes in the current interval
-        for iChange = 1:3
-            %% Select detections for beats BEFORE a mode change
-
-            lastPossibleSample = VV.FromRef.stamps(iChange, iInterval) - ...
-                                 rrInterval*fs - ...
-                                 rrInterval*EXCLUDEBEATS*fs;
-            firstPossibleSample = VV.FromRef.stamps(iChange, iInterval) - ...
-                                 rrInterval*fs - ...
-                                 (MAXBEATS+0.5) * rrInterval * fs;
-            detectionMask = logical( ...
-                (Data.BeatDetections.Merged.samplestamp > firstPossibleSample) .* ...
-                (Data.BeatDetections.Merged.samplestamp < lastPossibleSample) );
-            
-            detections = Data.BeatDetections.Merged.samplestamp(detectionMask);
-            while length(detections) > MAXBEATS-EXCLUDEBEATS
-                detections = detections(2:end);
-            end
-
-            % Make Calculations for both signals
-            for currentSignal = [{'PpgClip'},{'PpgCuff'}]
-                includedBeats = extractBeats(Data.Signals.(char(currentSignal)).data,...
-                         detections,...
-                         fs,...
-                         heartRate,...
-                         true);
-                [includedGoodBeats, quality] = extractGoodBeats(includedBeats, fs, heartRate, iPatient);
-                VV.(char(currentFlank)).(char(currentSignal)).beats{iChange,1,iInterval} = includedGoodBeats;
-                VV.(char(currentFlank)).(char(currentSignal)).quality(iChange,1,iInterval) = quality;
-            end
-            
-            %% Select detections for beats AFTER a mode change
-            
-            firstPossibleSample = VV.FromRef.stamps(iChange, iInterval) + ...
-                                  rrInterval*EXCLUDEBEATS*fs;
-            lastPossibleSample = VV.FromRef.stamps(iChange, iInterval) + ...
-                                 (MAXBEATS)*rrInterval*fs; 
-            detectionMask = logical( ...
-                (Data.BeatDetections.Merged.samplestamp > firstPossibleSample) .* ...
-                (Data.BeatDetections.Merged.samplestamp < lastPossibleSample) );
-            
-            detections = Data.BeatDetections.Merged.samplestamp(detectionMask);
-            while length(detections) > MAXBEATS-EXCLUDEBEATS
-                detections = detections(1:end-1);
-            end
-
-            % Make Calculations for both signals
-            for currentSignal = [{'PpgClip'},{'PpgCuff'}]
-                includedBeats = extractBeats(Data.Signals.(char(currentSignal)).data,...
-                         detections,...
-                         fs,...
-                         heartRate,...
-                         true);
-                [includedGoodBeats, quality] = extractGoodBeats(includedBeats, fs, heartRate, iPatient);
-                VV.(char(currentFlank)).(char(currentSignal)).beats{iChange,2,iInterval} = includedGoodBeats;
-                VV.(char(currentFlank)).(char(currentSignal)).quality(iChange,2,iInterval) = quality;
-            end
-            
-        end
-    end
-end    
 
 end

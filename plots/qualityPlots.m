@@ -1,4 +1,4 @@
-function [ ] = qualityPlots( Data, Metadata, Results, iPatient, MAXBEATS, EXCLUDEBEATS )
+function [ ] = qualityPlots( Data, Results, iPatient, MAXBEATS, EXCLUDEBEATS )
 %QUALITYPLOTS creates and saves plots to verify quality of beat detection
 % and beat selection
 %   Detailed explanation goes here
@@ -9,363 +9,114 @@ function [ ] = qualityPlots( Data, Metadata, Results, iPatient, MAXBEATS, EXCLUD
 patientId = ['Pt0' num2str(iPatient)];
 fs = Data.fs;
 
-
-%% Clip Before change AV plots
-interval = Results.(patientId).AV.interval;
-nIntervals = length(interval);
+%% Parameters
+nStimModes = 2; % AV and VV
 nChanges = 3;
-nDirections = 2; % (fromRef and toRef)
+nDirections = 2; % fromRef and toRef
+nPositions = 2; % before change and after change
+nSignals = 2; % PpgClip and PpgCuff
+
+stimModes = [{'AV'},{'VV'}];
 direction = [{'FromRef'},{'ToRef'}];
+positions = [{'beforeChange'},{'afterChange'}];
+signals = [{'PpgClip'},{'PpgCuff'}];
 
-qualityPlot = figure('Visible', 'off');
-for iInterval = 1:nIntervals
-    for iChange = 1:nChanges
-        for iDirection = 1:nDirections
-            currentDirection = char(direction(iDirection));
+
+%% Loop through all stimulation modes, signals and positions
+% intervals are different depenting on mode (AV: 40 80 ... 320; VV: -80 ...
+% +80)
+for iStimMode = 1:nStimModes
+    currentStimMode = char(stimModes(iStimMode));
+    interval = Results.(patientId).(currentStimMode).interval;
+    nIntervals = length(interval);
+    
+    % all signals are processed (PpgClip and PpgCuff)
+    for iSignal = 1:nSignals
+        currentSignal = char(signals(iSignal));
+        
+        for iPosition = 1:nPositions
+            currentPosition = char(positions(iPosition));
+
+            % for each Mode, Signal and Position there are two plots (beats
+            % overview and errorbar)
             
-            plotNumber = (iInterval-1)*nChanges*nDirections + (iChange-1)*nDirections + iDirection;
-            subplot(nIntervals,nChanges*nDirections,plotNumber);
-            beat = Results.(patientId).AV.(currentDirection).PpgClip.beats{iChange,1,iInterval};
-            quality = Results.(patientId).AV.(currentDirection).PpgClip.quality(iChange,1,iInterval);
-
-            t = 0:1/fs:(length(beat)-1)/fs;
-
-            beatMean = mean(beat,2);
-            beatSd = std(beat,0,2);
-
-            errorbar(t(1:2:end),beatMean(1:2:end),beatSd(1:2:end));
-            axis([0,0.7,-inf,inf]);
-            leftText = {['AV ' num2str(interval(iInterval))],...
-                ['C = ' num2str(iChange)],...
-                currentDirection};
-            rightText = ['Q = ' num2str(quality,2)];
-            text(0,max(beatMean)*0.8, leftText , 'HorizontalAlignment','left');
-            text(t(end)*0.9,max(beatMean)*0.9, rightText , 'HorizontalAlignment','right');
-
-            set(gca,'position',get(gca,'position').*[1 1 1.2 1.2])
-            axis off;
-        end
-    end
-end
-set(qualityPlot,'units','normalized','outerposition',[0 0 1 1]);
-set(qualityPlot,'PaperPositionMode','auto');
-print(qualityPlot,...
-    ['../results/plots/QualityPlotAV_' ...
-    patientId '_Clip_EX' num2str(EXCLUDEBEATS) ...
-    '_MAX' num2str(MAXBEATS) '_bC'],'-dpng','-r0');
-% savefig(qualityPlot,'QualityPlot.fig');
-close(qualityPlot);
-%% Clip After change AV plots
-interval = Results.(patientId).AV.interval;
-nIntervals = length(interval);
-nChanges = 3;
-nDirections = 2; % (fromRef and toRef)
-direction = [{'FromRef'},{'ToRef'}];
-
-qualityPlot = figure('Visible', 'off');
-for iInterval = 1:nIntervals
-    for iChange = 1:nChanges
-        for iDirection = 1:nDirections
-            currentDirection = char(direction(iDirection));
+            % initialize both plots
+            qualityPlotErrorBar = figure('Visible', 'off');
+            qualityPlotBeatsOverview = figure('Visible', 'off');
+            for iInterval = 1:nIntervals
+                for iChange = 1:nChanges
+                    for iDirection = 1:nDirections
+                        currentDirection = char(direction(iDirection));
+                        
+                        beats = Results.(patientId).(currentStimMode).(currentDirection).(currentSignal).beats{iChange,iPosition,iInterval};
+                        meanBeat = Results.(patientId).(currentStimMode).(currentDirection).(currentSignal).meanBeat{iChange,iPosition,iInterval};
+                        quality = Results.(patientId).(currentStimMode).(currentDirection).(currentSignal).quality(iChange,iPosition,iInterval);
+                        t = 0:1/fs:(length(beats)-1)/fs;
+                        % calculate standard deviation for errorbar plot
+                        beatSd = std(beats,0,2);
+                        
+                        plotNumber = (iInterval-1)*nChanges*nDirections + (iChange-1)*nDirections + iDirection;
+                        
+                        %% Plot Errorbar
+                        set(groot,'CurrentFigure',qualityPlotErrorBar);
+                        subplot(nIntervals,nChanges*nDirections,plotNumber);
+                        
+                        errorbar(t(1:2:end),meanBeat(1:2:end),beatSd(1:2:end));
+                        axis([0,0.8,-inf,inf]);
+                        % define texts
+                        leftText = {[currentStimMode ' ' num2str(interval(iInterval))],...
+                            ['C' num2str(iChange)],...
+                            currentDirection};
+                        rightText = ['Q = ' num2str(quality,2)];
+                        % input texts
+                        text(0,max(meanBeat)*0.8, leftText , 'HorizontalAlignment','left');
+                        text(t(end)*0.9,max(meanBeat)*0.9, rightText , 'HorizontalAlignment','right');
+                        % scale plot
+                        set(gca,'position',get(gca,'position').*[1 1 1.2 1.2])
+                        axis off;
+                        
+                        %% Plot beats overview
+                        set(groot,'CurrentFigure',qualityPlotBeatsOverview);
+                        subplot(nIntervals,nChanges*nDirections,plotNumber);
+                        
+                        plot(t,beats);
+                        axis([0,0.8,-inf,inf]);
+                        % define texts
+                        leftText = {[currentStimMode ' ' num2str(interval(iInterval))],...
+                            ['C' num2str(iChange)],...
+                            currentDirection};
+                        rightText = ['Q = ' num2str(quality,2)];
+                        % input texts
+                        text(0,max(meanBeat)*0.8, leftText , 'HorizontalAlignment','left');
+                        text(t(end)*0.9,max(meanBeat)*0.9, rightText , 'HorizontalAlignment','right');
+                        % scale plot
+                        set(gca,'position',get(gca,'position').*[1 1 1.2 1.2])
+                        axis off;
+                    end % Direction of change
+                end % Change of Interval
+            end % Stimulation interval
             
-            plotNumber = (iInterval-1)*nChanges*nDirections + (iChange-1)*nDirections + iDirection;
-            subplot(nIntervals,nChanges*nDirections,plotNumber);
-            beat = Results.(patientId).AV.(currentDirection).PpgClip.beats{iChange,2,iInterval};
-            quality = Results.(patientId).AV.(currentDirection).PpgClip.quality(iChange,2,iInterval);
+            %% Last changes to ErrorBar plot and saving
+            set(groot,'CurrentFigure',qualityPlotErrorBar);
+            set(qualityPlotErrorBar,'units','normalized','outerposition',[0 0 1 1]);
+            set(qualityPlotErrorBar,'PaperPositionMode','auto');
+            print(qualityPlotErrorBar,...
+                ['../results/plots/QualityPlotErrorBar/QualityPlot' currentStimMode '_' ...
+                patientId '_' currentSignal '_EX' num2str(EXCLUDEBEATS) ...
+                '_MAX' num2str(MAXBEATS) '_' currentPosition],'-dpng','-r0');
+            close(qualityPlotErrorBar);
+            %% Last changes to BeatsOverview plot and saving
+            set(groot,'CurrentFigure',qualityPlotBeatsOverview);
+            set(qualityPlotBeatsOverview,'units','normalized','outerposition',[0 0 1 1]);
+            set(qualityPlotBeatsOverview,'PaperPositionMode','auto');
+            print(qualityPlotBeatsOverview,...
+                ['../results/plots/QualityPlotBeats/QualityPlotBeats' currentStimMode '_' ...
+                patientId '_' currentSignal '_EX' num2str(EXCLUDEBEATS) ...
+                '_MAX' num2str(MAXBEATS) '_' currentPosition],'-dpng','-r0');
+            close(qualityPlotBeatsOverview);
+        end % Position
+    end % Signal
+end % StimMode
 
-            t = 0:1/fs:(length(beat)-1)/fs;
-
-            beatMean = mean(beat,2);
-            beatSd = std(beat,0,2);
-
-            errorbar(t(1:2:end),beatMean(1:2:end),beatSd(1:2:end));
-            axis([0,0.7,-inf,inf]);
-            leftText = {['AV ' num2str(interval(iInterval))],...
-                ['C = ' num2str(iChange)],...
-                currentDirection};
-            rightText = ['Q = ' num2str(quality,2)];
-            text(0,max(beatMean)*0.8, leftText , 'HorizontalAlignment','left');
-            text(t(end)*0.9,max(beatMean)*0.9, rightText , 'HorizontalAlignment','right');
-
-            set(gca,'position',get(gca,'position').*[1 1 1.2 1.2])
-            axis off;
-        end
-    end
-end
-set(qualityPlot,'units','normalized','outerposition',[0 0 1 1]);
-set(qualityPlot,'PaperPositionMode','auto');
-print(qualityPlot,...
-    ['../results/plots/QualityPlotAV_' ...
-    patientId '_Clip_EX' num2str(EXCLUDEBEATS) ...
-    '_MAX' num2str(MAXBEATS) '_aC'],'-dpng','-r0');
-% savefig(qualityPlot,'QualityPlot.fig');
-close(qualityPlot);
-%% Clip Before change VV plots
-interval = Results.(patientId).VV.interval;
-nIntervals = length(interval);
-nChanges = 3;
-nDirections = 2; % (fromRef and toRef)
-direction = [{'FromRef'},{'ToRef'}];
-
-qualityPlot = figure('Visible', 'off');
-for iInterval = 1:nIntervals
-    for iChange = 1:nChanges
-        for iDirection = 1:nDirections
-            currentDirection = char(direction(iDirection));
-            
-            plotNumber = (iInterval-1)*nChanges*nDirections + (iChange-1)*nDirections + iDirection;
-            subplot(nIntervals,nChanges*nDirections,plotNumber);
-            beat = Results.(patientId).VV.(currentDirection).PpgClip.beats{iChange,1,iInterval};
-            quality = Results.(patientId).VV.(currentDirection).PpgClip.quality(iChange,1,iInterval);
-
-            t = 0:1/fs:(length(beat)-1)/fs;
-
-            beatMean = mean(beat,2);
-            beatSd = std(beat,0,2);
-
-            errorbar(t(1:2:end),beatMean(1:2:end),beatSd(1:2:end));
-            axis([0,0.7,-inf,inf]);
-            leftText = {['VV ' num2str(interval(iInterval))],...
-                ['C = ' num2str(iChange)],...
-                currentDirection};
-            rightText = ['Q = ' num2str(quality,2)];
-            text(0,max(beatMean)*0.8, leftText , 'HorizontalAlignment','left');
-            text(t(end)*0.9,max(beatMean)*0.9, rightText , 'HorizontalAlignment','right');
-
-            set(gca,'position',get(gca,'position').*[1 1 1.2 1.2])
-            axis off;
-        end
-    end
-end
-set(qualityPlot,'units','normalized','outerposition',[0 0 1 1]);
-set(qualityPlot,'PaperPositionMode','auto');
-print(qualityPlot,...
-    ['../results/plots/QualityPlotVV_' ...
-    patientId '_Clip_EX' num2str(EXCLUDEBEATS) ...
-    '_MAX' num2str(MAXBEATS) '_bC'],'-dpng','-r0');% savefig(qualityPlot,'QualityPlot.fig');
-close(qualityPlot);
-%% Clip After change VV plots
-interval = Results.(patientId).VV.interval;
-nIntervals = length(interval);
-nChanges = 3;
-nDirections = 2; % (fromRef and toRef)
-direction = [{'FromRef'},{'ToRef'}];
-
-qualityPlot = figure('Visible', 'off');
-for iInterval = 1:nIntervals
-    for iChange = 1:nChanges
-        for iDirection = 1:nDirections
-            currentDirection = char(direction(iDirection));
-            
-            plotNumber = (iInterval-1)*nChanges*nDirections + (iChange-1)*nDirections + iDirection;
-            subplot(nIntervals,nChanges*nDirections,plotNumber);
-            beat = Results.(patientId).VV.(currentDirection).PpgClip.beats{iChange,2,iInterval};
-            quality = Results.(patientId).VV.(currentDirection).PpgClip.quality(iChange,2,iInterval);
-
-            t = 0:1/fs:(length(beat)-1)/fs;
-
-            beatMean = mean(beat,2);
-            beatSd = std(beat,0,2);
-
-            errorbar(t(1:2:end),beatMean(1:2:end),beatSd(1:2:end));
-            axis([0,0.7,-inf,inf]);
-            leftText = {['VV ' num2str(interval(iInterval))],...
-                ['C = ' num2str(iChange)],...
-                currentDirection};
-            rightText = ['Q = ' num2str(quality,2)];
-            text(0,max(beatMean)*0.8, leftText , 'HorizontalAlignment','left');
-            text(t(end)*0.9,max(beatMean)*0.9, rightText , 'HorizontalAlignment','right');
-
-            set(gca,'position',get(gca,'position').*[1 1 1.2 1.2])
-            axis off;
-        end
-    end
-end
-set(qualityPlot,'units','normalized','outerposition',[0 0 1 1]);
-set(qualityPlot,'PaperPositionMode','auto');
-print(qualityPlot,...
-    ['../results/plots/QualityPlotVV_' ...
-    patientId '_Clip_EX' num2str(EXCLUDEBEATS) ...
-    '_MAX' num2str(MAXBEATS) '_aC'],'-dpng','-r0');% savefig(qualityPlot,'QualityPlot.fig');
-close(qualityPlot);
-
-%% Cuff Before change AV plots
-interval = Results.(patientId).AV.interval;
-nIntervals = length(interval);
-nChanges = 3;
-nDirections = 2; % (fromRef and toRef)
-direction = [{'FromRef'},{'ToRef'}];
-
-qualityPlot = figure('Visible', 'off');
-for iInterval = 1:nIntervals
-    for iChange = 1:nChanges
-        for iDirection = 1:nDirections
-            currentDirection = char(direction(iDirection));
-            
-            plotNumber = (iInterval-1)*nChanges*nDirections + (iChange-1)*nDirections + iDirection;
-            subplot(nIntervals,nChanges*nDirections,plotNumber);
-            beat = Results.(patientId).AV.(currentDirection).PpgCuff.beats{iChange,1,iInterval};
-            quality = Results.(patientId).AV.(currentDirection).PpgCuff.quality(iChange,1,iInterval);
-
-            t = 0:1/fs:(length(beat)-1)/fs;
-
-            beatMean = mean(beat,2);
-            beatSd = std(beat,0,2);
-
-            errorbar(t(1:2:end),beatMean(1:2:end),beatSd(1:2:end));
-            axis([0,0.7,-inf,inf]);
-            leftText = {['AV ' num2str(interval(iInterval))],...
-                ['C = ' num2str(iChange)],...
-                currentDirection};
-            rightText = ['Q = ' num2str(quality,2)];
-            text(0,max(beatMean)*0.8, leftText , 'HorizontalAlignment','left');
-            text(t(end)*0.9,max(beatMean)*0.9, rightText , 'HorizontalAlignment','right');
-
-            set(gca,'position',get(gca,'position').*[1 1 1.2 1.2])
-            axis off;
-        end
-    end
-end
-set(qualityPlot,'units','normalized','outerposition',[0 0 1 1]);
-set(qualityPlot,'PaperPositionMode','auto');
-print(qualityPlot,...
-    ['../results/plots/QualityPlotAV_' ...
-    patientId '_Cuff_EX' num2str(EXCLUDEBEATS) ...
-    '_MAX' num2str(MAXBEATS) '_bC'],'-dpng','-r0');
-% savefig(qualityPlot,'QualityPlot.fig');
-close(qualityPlot);
-%% Cuff After change AV plots
-interval = Results.(patientId).AV.interval;
-nIntervals = length(interval);
-nChanges = 3;
-nDirections = 2; % (fromRef and toRef)
-direction = [{'FromRef'},{'ToRef'}];
-
-qualityPlot = figure('Visible', 'off');
-for iInterval = 1:nIntervals
-    for iChange = 1:nChanges
-        for iDirection = 1:nDirections
-            currentDirection = char(direction(iDirection));
-            
-            plotNumber = (iInterval-1)*nChanges*nDirections + (iChange-1)*nDirections + iDirection;
-            subplot(nIntervals,nChanges*nDirections,plotNumber);
-            beat = Results.(patientId).AV.(currentDirection).PpgCuff.beats{iChange,2,iInterval};
-            quality = Results.(patientId).AV.(currentDirection).PpgCuff.quality(iChange,2,iInterval);
-
-            t = 0:1/fs:(length(beat)-1)/fs;
-
-            beatMean = mean(beat,2);
-            beatSd = std(beat,0,2);
-
-            errorbar(t(1:2:end),beatMean(1:2:end),beatSd(1:2:end));
-            axis([0,0.7,-inf,inf]);
-            leftText = {['AV ' num2str(interval(iInterval))],...
-                ['C = ' num2str(iChange)],...
-                currentDirection};
-            rightText = ['Q = ' num2str(quality,2)];
-            text(0,max(beatMean)*0.8, leftText , 'HorizontalAlignment','left');
-            text(t(end)*0.9,max(beatMean)*0.9, rightText , 'HorizontalAlignment','right');
-
-            set(gca,'position',get(gca,'position').*[1 1 1.2 1.2])
-            axis off;
-        end
-    end
-end
-set(qualityPlot,'units','normalized','outerposition',[0 0 1 1]);
-set(qualityPlot,'PaperPositionMode','auto');
-print(qualityPlot,...
-    ['../results/plots/QualityPlotAV_' ...
-    patientId '_Cuff_EX' num2str(EXCLUDEBEATS) ...
-    '_MAX' num2str(MAXBEATS) '_aC'],'-dpng','-r0');
-% savefig(qualityPlot,'QualityPlot.fig');
-close(qualityPlot);
-%% Cuff Before change VV plots
-interval = Results.(patientId).VV.interval;
-nIntervals = length(interval);
-nChanges = 3;
-nDirections = 2; % (fromRef and toRef)
-direction = [{'FromRef'},{'ToRef'}];
-
-qualityPlot = figure('Visible', 'off');
-for iInterval = 1:nIntervals
-    for iChange = 1:nChanges
-        for iDirection = 1:nDirections
-            currentDirection = char(direction(iDirection));
-            
-            plotNumber = (iInterval-1)*nChanges*nDirections + (iChange-1)*nDirections + iDirection;
-            subplot(nIntervals,nChanges*nDirections,plotNumber);
-            beat = Results.(patientId).VV.(currentDirection).PpgCuff.beats{iChange,1,iInterval};
-            quality = Results.(patientId).VV.(currentDirection).PpgCuff.quality(iChange,1,iInterval);
-
-            t = 0:1/fs:(length(beat)-1)/fs;
-
-            beatMean = mean(beat,2);
-            beatSd = std(beat,0,2);
-
-            errorbar(t(1:2:end),beatMean(1:2:end),beatSd(1:2:end));
-            axis([0,0.7,-inf,inf]);
-            leftText = {['VV ' num2str(interval(iInterval))],...
-                ['C = ' num2str(iChange)],...
-                currentDirection};
-            rightText = ['Q = ' num2str(quality,2)];
-            text(0,max(beatMean)*0.8, leftText , 'HorizontalAlignment','left');
-            text(t(end)*0.9,max(beatMean)*0.9, rightText , 'HorizontalAlignment','right');
-
-            set(gca,'position',get(gca,'position').*[1 1 1.2 1.2])
-            axis off;
-        end
-    end
-end
-set(qualityPlot,'units','normalized','outerposition',[0 0 1 1]);
-set(qualityPlot,'PaperPositionMode','auto');
-print(qualityPlot,...
-    ['../results/plots/QualityPlotVV_' ...
-    patientId '_Cuff_EX' num2str(EXCLUDEBEATS) ...
-    '_MAX' num2str(MAXBEATS) '_bC'],'-dpng','-r0');% savefig(qualityPlot,'QualityPlot.fig');
-close(qualityPlot);
-%% Cuff After change VV plots
-interval = Results.(patientId).VV.interval;
-nIntervals = length(interval);
-nChanges = 3;
-nDirections = 2; % (fromRef and toRef)
-direction = [{'FromRef'},{'ToRef'}];
-
-qualityPlot = figure('Visible', 'off');
-for iInterval = 1:nIntervals
-    for iChange = 1:nChanges
-        for iDirection = 1:nDirections
-            currentDirection = char(direction(iDirection));
-            
-            plotNumber = (iInterval-1)*nChanges*nDirections + (iChange-1)*nDirections + iDirection;
-            subplot(nIntervals,nChanges*nDirections,plotNumber);
-            beat = Results.(patientId).VV.(currentDirection).PpgCuff.beats{iChange,2,iInterval};
-            quality = Results.(patientId).VV.(currentDirection).PpgCuff.quality(iChange,2,iInterval);
-
-            t = 0:1/fs:(length(beat)-1)/fs;
-
-            beatMean = mean(beat,2);
-            beatSd = std(beat,0,2);
-
-            errorbar(t(1:2:end),beatMean(1:2:end),beatSd(1:2:end));
-            axis([0,0.7,-inf,inf]);
-            leftText = {['VV ' num2str(interval(iInterval))],...
-                ['C = ' num2str(iChange)],...
-                currentDirection};
-            rightText = ['Q = ' num2str(quality,2)];
-            text(0,max(beatMean)*0.8, leftText , 'HorizontalAlignment','left');
-            text(t(end)*0.9,max(beatMean)*0.9, rightText , 'HorizontalAlignment','right');
-
-            set(gca,'position',get(gca,'position').*[1 1 1.2 1.2])
-            axis off;
-        end
-    end
-end
-set(qualityPlot,'units','normalized','outerposition',[0 0 1 1]);
-set(qualityPlot,'PaperPositionMode','auto');
-print(qualityPlot,...
-    ['../results/plots/QualityPlotVV_' ...
-    patientId '_Cuff_EX' num2str(EXCLUDEBEATS) ...
-    '_MAX' num2str(MAXBEATS) '_aC'],'-dpng','-r0');% savefig(qualityPlot,'QualityPlot.fig');
-close(qualityPlot);
 end
 

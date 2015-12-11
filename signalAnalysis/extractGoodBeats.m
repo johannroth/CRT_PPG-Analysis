@@ -30,10 +30,6 @@ function [ goodBeats, quality ] = extractGoodBeats( beats, fs, heartrate, iPatie
     DEBUG = false;
 
     %% Calculate overall beat parameters
-
-    quantile25Beat = quantile(beats,0.25,2);
-    quantile75Beat = quantile(beats,0.75,2);
-    iqrBeat = quantile75Beat-quantile25Beat;
     
     expectedRR = 60/heartrate; % in s
     expectedBeatLength = round(expectedRR * fs); % in samples
@@ -45,74 +41,127 @@ function [ goodBeats, quality ] = extractGoodBeats( beats, fs, heartrate, iPatie
     goodBeat = 1:size(beats,2);
     % use 'goodBeat(i) = 0' to mark a bad beat
 
-    %% Loop through all beats to exclude bad beats (6 Criteria)
-    for i = 1:size(beats,2)
+    %% Remove beats with artifacts or non-expected morphology (5 Criteria)
+    for iCurrentBeat = 1:size(beats,2)
         %% Criteria to determine if a beat is bad
         % each criterion has to be false to allow a beat to be passed on
         % as good beat.
-        
-        %% Criterion 1: outlier further than 1.5 times iqr
-        % if more than 20% of values of the beat extend farther than 1.5
-        % times the difference of 25% and 75% quantiles (i.e. are outliers)
-        % the beat is excluded
-        if mean(beats(:,i) < quantile25Beat - iqrBeat.*1.5) > 0.2
-            goodBeat(i) = 0;
-            continue;
-        end
-        if mean(beats(:,i) > quantile75Beat + iqrBeat.*1.5) > 0.2
-            goodBeat(i) = 0;
-            continue;
-        end
-        %% Criterion 2: local minimum around beginning of beat
+
+        %% Criterion 1: local minimum around beginning of beat
         % the first minimum may not be after a certain point in the beat
-        [~, index] = min(beats(1:end/2,i));
+        [~, index] = min(beats(1:end/2,iCurrentBeat));
         if (index > 2*margin)
-            goodBeat(i) = 0;
+            goodBeat(iCurrentBeat) = 0;
             continue;
         end
-        %% Criterion 3: local minimum around end of beat
+        %% Criterion 2: local minimum around end of beat
         % the second minimum may not be before a certain point in the
         % beat
-        [~, index] = min(beats(end/2:end,i));
-        if ( index < (length(beats(end/2:end,i))-1.3*margin) )
-            goodBeat(i) = 0;
+        [~, index] = min(beats(end/2:end,iCurrentBeat));
+        if ( index < (length(beats(end/2:end,iCurrentBeat))-1.3*margin) )
+            goodBeat(iCurrentBeat) = 0;
             continue;
         end
-        %% Criterion 4: more peaks than usual
+        %% Criterion 3: more peaks than usual
         % a normal beat has 1 to 3 peaks
-        [~,~,peakWidth,~] = findpeaks(beats(:,i));
+        [~,~,peakWidth,~] = findpeaks(beats(:,iCurrentBeat));
         expectedPeakWidth = 0.02 * fs;
         if (length(peakWidth(peakWidth>expectedPeakWidth)) > 3)
-            goodBeat(i) = 0;
+            goodBeat(iCurrentBeat) = 0;
             continue;
         end
-        %% Criterion 5: more than 15% of beat below zero
+        %% Criterion 4: more than 15% of beat below zero
         % if more than 15% of values of the beat are lower than zero after
         % drift removal, beat is excluded
-        if mean(beats(:,i) < 0) > 0.15
-            goodBeat(i) = 0;
+        if mean(beats(:,iCurrentBeat) < 0) > 0.15
+            goodBeat(iCurrentBeat) = 0;
             continue;
         end
-        %% Criterion 6: maximum height of negative values
+        %% Criterion 5: maximum height of negative values
         % if highest negative value has absolute value of over 10% of
         % highest positive value, beat is excluded
-        if abs(min(beats(:,i))) > max(beats(:,i))
-            goodBeat(i) = 0;
+        if abs(min(beats(:,iCurrentBeat))) > max(beats(:,iCurrentBeat))
+            goodBeat(iCurrentBeat) = 0;
             continue;
         end
         
+%         %% Criterion 7: outlier in middle of beat
+%         % if more than 50% of values in the middle section of the beat
+%         % extend either farther than 1.75 or lower than 0.1 of mean beat,
+%         % the beat is excluded
+%         % this Criterion is used for the remaining beats only.
+%         currentBeat = beats(:,iCurrentBeat);
+%         meanBeat = mean(beats,2);
+%         middleOfMeanBeat = meanBeat(round(end/3):round(2*end/3));
+%         middleOfCurrentBeat = currentBeat(round(end/3):round(2*end/3));
+%         
+%         if mean( or( (middleOfCurrentBeat > middleOfMeanBeat.*2 ), ...
+%                      (middleOfCurrentBeat < middleOfMeanBeat.*(-10)) ...
+%                    )...
+%                ) > 0.5
+%             goodBeat(iCurrentBeat) = 0;
+%             continue;
+%         end
+        
     end
+    
+    %% Removing of outliers of non-artifact beats
+    % After exclusion of beats with a non-beat morphology (artifacts) the
+    % outliers are removed
+    goodBeat(goodBeat == 0) = [];
+    goodBeatsSoFar = beats(:,goodBeat);
+
+    quantile25Beat = quantile(goodBeatsSoFar,0.25,2);
+    quantile75Beat = quantile(goodBeatsSoFar,0.75,2);
+    iqrBeat = quantile75Beat-quantile25Beat;
+    
+    for iCurrentBeat = 1:size(goodBeatsSoFar,2)
+        %% Criterion 1: outlier further than 1.5 times iqr
+        % if more than 10% of values of the beat extend farther than 1.5
+        % times the difference of 25% and 75% quantiles (i.e. are outliers)
+        % the beat is excluded
+        if mean(beats(:,iCurrentBeat) < quantile25Beat - iqrBeat.*1.5) > 0.1
+            goodBeat(iCurrentBeat) = 0;
+            continue;
+        end
+        if mean(beats(:,iCurrentBeat) > quantile75Beat + iqrBeat.*1.5) > 0.1
+            goodBeat(iCurrentBeat) = 0;
+            continue;
+        end
+    end
+%     %% Removing further outliers of non-artifact beats
+%     % If there are many bad beats, further outliers may be skipped. Thus
+%     % the next criterion is applied after removing bad beats again.
+%     goodBeat(goodBeat == 0) = [];
+%     goodBeatsSoFar = beats(:,goodBeat);
+%     medianBeat = median(goodBeatsSoFar,2);
+%     for iCurrentBeat = 1:size(goodBeatsSoFar,2)    
+%         %% Criterion 2: single high beats
+%         % if more than 10% of values of the beat extend farther than 1.5
+%         % times the corresponding values of the median beat the beat is
+%         % excluded. Only the middle section is regarded for this Criterion
+%         % (outer parts contain both zero-passings (minima) and are thus to
+%         % be ignored)
+%         beatLength = size(goodBeatsSoFar,1);
+%         % Area to look in
+%         areaMask = round(beatLength/3):round(beatLength*2/3);
+%         currentBeat = beats(:,iCurrentBeat);
+%         if mean( currentBeat(areaMask) > medianBeat(areaMask).*1.5 ) > 0.1
+%             goodBeat(iCurrentBeat) = 0;
+%             continue;
+%         end
+%     end
 
     %% plots for debugging
     if DEBUG
         t = 0 : 1/fs : (size(beats,1)-1)/fs;
         figure;
-        for i = 1:size(beats,2)
-            if goodBeat(i) == 0
-                plot3(t,i*ones(size(t)),beats(:,i),'r-');
+        for iCurrentBeat = 1:size(beats,2)
+            if goodBeat(iCurrentBeat) == 0
+                plot3(t,iCurrentBeat*ones(size(t)),beats(:,iCurrentBeat),'r-');
                 hold on;
             else
-                plot3(t,i*ones(size(t)),beats(:,i),'k-');
+                plot3(t,iCurrentBeat*ones(size(t)),beats(:,iCurrentBeat),'k-');
                 hold on;
             end
 
@@ -124,7 +173,11 @@ function [ goodBeats, quality ] = extractGoodBeats( beats, fs, heartrate, iPatie
     goodBeat(goodBeat == 0) = [];
     goodBeats = beats(:,goodBeat);
     quality = size(goodBeats,2)/size(beats,2);
-%     beatMask = goodBeat;
+    %% If all beats have been excluded, return an empty beat (only zeros)
+    if quality == 0
+        goodBeats = zeros(size(beats,1),1);
+    end
+    
     
     %% continued: plots for debugging
     if DEBUG

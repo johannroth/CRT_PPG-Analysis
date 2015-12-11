@@ -258,5 +258,59 @@ axis([0,0.7,-inf,inf]);
 quality = Results.Pt06.AV.FromRef.PpgClip.quality(2,2,4);
 text(t(end)*0.9,max(testBeatMean)*0.9, ['Q = ' num2str(quality)] , 'HorizontalAlignment','right');
 
+%% get a beat from results struct
 
--
+beats = Results.(patientId).AV.ToRef.PpgCuff.beats{ ...
+                                             1, ... % change (1...3)
+                                             2, ... % position (1... before, 2... after)
+                                             1 ...  % interval (1...x)
+                                            };              % ( x = length(Results.(patientId).(stimMode).interval ))
+figure();
+plot(beats, 'k:');
+hold on;
+plot(mean(beats,2),'g-');
+hold on;
+plot(median(beats,2),'r-');
+
+figure2 = figure();
+set(groot,'CurrentFigure',figure1);
+plot(1:100);
+
+%% Get minimum quality (to check if all beats have been excluded at least once)
+stimModes = [{'AV'},{'VV'}];
+directions = [{'FromRef'},{'ToRef'}];
+positions = [{'beforeChange'},{'afterChange'}];
+signals = [{'PpgClip'},{'PpgCuff'}];
+quality = [];
+for i = 1:length(patient)
+    id = ['Pt0' num2str(patient(i))];
+    for currentMode = stimModes
+        for currentDirection = directions
+            for currentSignal = signals
+                if isempty(quality)
+                    quality = Results.(char(id)).(char(currentMode)).(char(currentDirection)).(char(currentSignal)).quality(:);
+                else
+                    quality = [ quality; Results.(char(id)).(char(currentMode)).(char(currentDirection)).(char(currentSignal)).quality(:)];
+                end
+            end
+        end
+    end
+end
+min(quality), mean(quality)
+figure;
+plot(sort(quality));
+hold on;
+plot(1:length(quality),ones(1,length(quality)).*mean(quality));
+
+
+                
+                
+                
+                
+%% test to get all qualities
+beats = Results.(patientId).AV.ToRef.PpgCuff.quality{ ...
+                                             1, ... % change (1...3)
+                                             2, ... % position (1... before, 2... after)
+                                             1 ...  % interval (1...x)
+                                            };
+beats(:)

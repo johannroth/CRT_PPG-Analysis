@@ -27,8 +27,8 @@ patient = 1:6;
 % if available)
 FORCEIMPORT = false;
 
-% create quality plots
-QUALITYPLOTS = true;
+% create quality plots (takes up to 10 minutes!)
+QUALITYPLOTS = false;
 
 % Amount of beats before and after each change of the stimulation interval
 % that are included in calculation. Maximum: 15 beats (maximum time: 10s,
@@ -36,12 +36,14 @@ QUALITYPLOTS = true;
 % This value is the maximum possible amount. The amount of beats that are
 % included in the calculation may be smaller due to exclusion of bad beats!
 MAXBEATS = 8; % 3...15 beats
+
 Results.Info.maxbeats = MAXBEATS;
 
 % Amount of beats directly before or after the change of interval to be
 % excluded. The maximum amount of beats will be lowered by excluding the
 % 'inner' beats around a change of interval
 EXCLUDEBEATS = 0; % 0...MAXBEATS-3
+
 Results.Info.excludebeats = EXCLUDEBEATS;
 
 
@@ -56,13 +58,12 @@ for iPatient = patient
     fprintf('..importing unisens data');
     if exist(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'file') && ~FORCEIMPORT
         Data = load(['../data/matlab/' patientId '/' patientId '_unisensImport.mat']);
-        Data = Data.Data;
         if hours(datetime('now') - Data.imported) > 24
             clearvars Data;
             [Data.Signals, Data.StimulationModes, Data.BsValues, Data.BeatDetections] = extractFromUnisens(iPatient);
             Data.imported = datetime('now');
             Data.patient = iPatient;
-            save(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'Data');
+            save(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'-struct','Data');
         else
             fprintf(' (using existing imported dataset)');
         end
@@ -70,7 +71,7 @@ for iPatient = patient
         [Data.Signals, Data.StimulationModes, Data.BsValues, Data.BeatDetections] = extractFromUnisens(iPatient);
         Data.imported = datetime('now');
         Data.patient = iPatient;
-        save(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'Data');
+        save(['../data/matlab/' patientId '/' patientId '_unisensImport.mat'],'-struct','Data');
     end
     fprintf('..\n');
     Metadata = importPatientMetadata('..\data\raw\Patient_data.xlsx');
@@ -97,6 +98,15 @@ for iPatient = patient
     fprintf('..detecting beats..\n');
     Data.BeatDetections.Merged.samplestamp = detectBeats(Data, Metadata, iPatient);
     Data.BeatDetections.Merged.fs = Data.BeatDetections.BsBp.fs;
+    
+    %% Data struct for the current patient has been completed.
+    % Full import and merging of beat detections has been completed. Struct
+    % is saved for faster processing later.
+    save(['../data/matlab/' patientId '/' patientId '_processedDataStruct.mat'],'-struct','Data');
+    
+    % for later import use:
+    % Data = load(['../data/matlab/' patientId '/' patientId '_processedDataStruct.mat']);
+    
     
     %% Plots of sample beats for debugging
 %         %% Plot for waveform comparison of extracted beats
@@ -150,9 +160,10 @@ for iPatient = patient
     %% Create plots for quality control and save them to ../results/plots
     % plots are not opened.
     fprintf('..creating plots..\n');
-    fprintf('....creating quality plots..\n');
+    
     if QUALITYPLOTS
-        qualityPlots( Data, Metadata, Results, iPatient, MAXBEATS, EXCLUDEBEATS );
+        fprintf('....creating quality plots..\n');
+        qualityPlots( Data, Results, iPatient, MAXBEATS, EXCLUDEBEATS );
     end
     
     %% Analysis
