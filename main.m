@@ -15,7 +15,7 @@
 clear;
 %% Add folders to path to find scripts
 oldpath = path;
-addpath('dataImport','plots','preprocessing','signalAnalysis','unisens');
+addpath('beatAnalysis','dataImport','plots','preprocessing','signalAnalysis','unisens');
 
 %% Patient selection (1:6)
 % Patients available for the study (1:6 for all patients of clinical study
@@ -47,7 +47,8 @@ EXCLUDEBEATS = 0; % 0...MAXBEATS-3
 Results.Info.excludebeats = EXCLUDEBEATS;
 
 
-%% Loop through all patients (1-6)
+%% Data import and signal analysis
+% Loop through all patients (1-6)
 for iPatient = patient
     fprintf(['Computing patient ' num2str(iPatient) '.\n']);
     patientId = ['Pt0' int2str(iPatient)];
@@ -107,7 +108,6 @@ for iPatient = patient
     % for later import use:
     % Data = load(['../data/matlab/' patientId '/' patientId '_processedDataStruct.mat']);
     
-    
     %% Plots of sample beats for debugging
 %         %% Plot for waveform comparison of extracted beats
 %             stamp = Data.BeatDetections.Merged.samplestamp;
@@ -143,7 +143,6 @@ for iPatient = patient
     % from reference interval and the samplestamp of the mode change
     [Results.(patientId).AV, Results.(patientId).VV] = extractModes(Data,Metadata,iPatient);
     
-    
     %% Extract beats around mode changes (amound defined by MAXBEATS)
     % here the beats around mode changes are extracted and good beats are
     % saved to 'Results' struct.
@@ -164,12 +163,21 @@ for iPatient = patient
     if QUALITYPLOTS
         fprintf('....creating quality plots..\n');
         qualityPlots( Data, Results, iPatient, MAXBEATS, EXCLUDEBEATS );
-    end
+    end   
+end
+
+%% Analysis of extracted Data
+fprintf('..analysing beats..\n');
+% This is implemented in a second loop to be able to run this seperately if
+% needed.
+for iPatient = patient
+    patientId = ['Pt0' int2str(iPatient)];
+    Data = load(['../data/matlab/' patientId '/' patientId '_processedDataStruct.mat']);
     
-    %% Analysis
-%     fprintf('..analysing beats..\n');
     
 end
+
+
 
 
 %% Restore old path

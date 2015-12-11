@@ -1,12 +1,13 @@
-function [ ] = fastQualityPlot( input_args )
-%UNTITLED9 Summary of this function goes here
-%   Detailed explanation goes here
+function [ ] = fastQualityPlot( Results, patient )
+%FASTQUALITYPLOT plots quality distribution over all extracted beats.
 
 stimModes = [{'AV'},{'VV'}];
 directions = [{'FromRef'},{'ToRef'}];
 positions = [{'beforeChange'},{'afterChange'}];
 signals = [{'PpgClip'},{'PpgCuff'}];
 quality = [];
+
+figure;
 for i = 1:length(patient)
     id = ['Pt0' num2str(patient(i))];
     for currentMode = stimModes
@@ -20,12 +21,15 @@ for i = 1:length(patient)
             end
         end
     end
+    subplot(round(length(patient)/2), 2, i);
+    plot(sort(quality));
+    hold on;
+    plot(1:length(quality),ones(1,length(quality)).*mean(quality));
+    title(['Quality of Extracted beats (' id ')']);
+    quality = [];
 end
-min(quality), mean(quality)
-figure;
-plot(sort(quality));
-hold on;
-plot(1:length(quality),ones(1,length(quality)).*mean(quality));
+
+
 
 end
 

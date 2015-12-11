@@ -314,3 +314,23 @@ beats = Results.(patientId).AV.ToRef.PpgCuff.quality{ ...
                                              1 ...  % interval (1...x)
                                             };
 beats(:)
+
+
+%% remove all beats from results
+stimModes = [{'AV'},{'VV'}];
+directions = [{'FromRef'},{'ToRef'}];
+positions = [{'beforeChange'},{'afterChange'}];
+signals = [{'PpgClip'},{'PpgCuff'}];
+quality = [];
+for i = 1:length(patient)
+    id = ['Pt0' num2str(patient(i))];
+    for currentMode = stimModes
+        for currentDirection = directions
+            for currentSignal = signals
+                ResultsShort.(char(id)).(char(currentMode)).(char(currentDirection)).(char(currentSignal)).beats = [];
+            end
+        end
+    end
+end
+
+
