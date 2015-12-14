@@ -26,6 +26,7 @@ for i = 1:length(patient)
     hold on;
     plot(1:length(quality),ones(1,length(quality)).*mean(quality));
     title(['Quality of Extracted beats (' id ')']);
+    axis([0 inf 0 1]);
     quality = [];
 end
 

@@ -158,10 +158,8 @@ for iPatient = patient
 
     %% Create plots for quality control and save them to ../results/plots
     % plots are not opened.
-    fprintf('..creating plots..\n');
-    
     if QUALITYPLOTS
-        fprintf('....creating quality plots..\n');
+        fprintf('..creating quality plots..\n');
         qualityPlots( Data, Results, iPatient, MAXBEATS, EXCLUDEBEATS );
     end   
 end
@@ -170,12 +168,15 @@ end
 fprintf('..analysing beats..\n');
 % This is implemented in a second loop to be able to run this seperately if
 % needed.
-for iPatient = patient
-    patientId = ['Pt0' int2str(iPatient)];
-    Data = load(['../data/matlab/' patientId '/' patientId '_processedDataStruct.mat']);
-    
-    
-end
+Results = analyseBeats(Results, patient);
+Results = calculateDeltas(Results, patient);
+
+% for iPatient = patient
+%     patientId = ['Pt0' int2str(iPatient)];
+%     Data = load(['../data/matlab/' patientId '/' patientId '_processedDataStruct.mat']);
+%     
+%     
+% end
 
 
 

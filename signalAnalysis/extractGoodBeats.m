@@ -175,7 +175,7 @@ function [ goodBeats, quality ] = extractGoodBeats( beats, fs, heartrate, iPatie
     quality = size(goodBeats,2)/size(beats,2);
     %% If all beats have been excluded, return an empty beat (only zeros)
     if quality == 0
-        goodBeats = zeros(size(beats,1),1);
+        goodBeats = NaN(size(beats,1),1);
     end
     
     

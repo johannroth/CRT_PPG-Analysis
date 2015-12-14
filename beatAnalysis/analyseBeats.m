@@ -1,12 +1,11 @@
-function [ UpdatedResults ] = analyseBeats( Results, Data )
+function [ UpdatedResults ] = analyseBeats( Results, patient )
 %ANALYSEBEATS analyses beats in a given struct of results
 %   Parameters:
 %       Results (struct)
 %           Results struct created by main.m containing sorted beats for
 %           all patients
-%       Data (struct)
-%           Data struct created by main.m containing signals of a single
-%           patient
+%       patient (int [1xN])
+%           List of patients where N patient numbers are specified
 %   Returns:
 %       UpdatedResults (struct)
 %           Results struct created by main.m containing sorted beats for
@@ -14,6 +13,11 @@ function [ UpdatedResults ] = analyseBeats( Results, Data )
 %
 % Author: Johann Roth
 % Date: 11.12.2015
+
+%% List of parameters
+Results.Info.parameters = [{'pulseHeight'}];
+
+Results.Info.nMeanBeats = 0;
 
 
 %% Set possible values by which the beats are sorted in Results struct
@@ -24,7 +28,7 @@ listSignals = [{'PpgClip'},{'PpgCuff'}];
 listChanges = 1:3;
 % in the following variables beginning with c (like cModes) contain the
 % current value
-%% Loop through beats in Results struct
+%% Loop through beats in Results struct to calculate beat parameters
 for iPatient = 1:length(patient)                            % Pt01 / ... / Pt06
     patientId = ['Pt0' num2str(patient(iPatient))];
     for iMode = listStimModes                               % AV / VV
@@ -45,8 +49,11 @@ for iPatient = 1:length(patient)                            % Pt01 / ... / Pt06
                         for iInterval = 1:nIntervals        % AV40 / ... / VV80
                             %% Here every single mean beat is processed ############
                             beat = Results.(patientId).(cMode).(cDirection).(cSignal).meanBeat{iChange, iPosition, iInterval};
+                            
                             Results.(patientId).(cMode).(cDirection).(cSignal).pulseHeight(iChange, iPosition, iInterval) ...
                                 = getPulseHeight(beat);
+                            
+                            Results.Info.nMeanBeats = Results.Info.nMeanBeats + 1;
                             %% Here processing of the current beat is finished #####
                         end
                     end
@@ -56,6 +63,8 @@ for iPatient = 1:length(patient)                            % Pt01 / ... / Pt06
     end
 end
 
+%% Write back results
+UpdatedResults = Results;
 end
 
 
