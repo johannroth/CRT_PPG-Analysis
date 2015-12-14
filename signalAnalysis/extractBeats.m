@@ -21,6 +21,8 @@ function [ beats ] = extractBeats( signal, samplestamps, fs, heartrate, removeDr
 % Date: 07.12.2015
 
     %% Calculation of length of a beat
+    % a margin of 1.2 is multiplied to the expected beat length to be able
+    % to detect beats around the possibly inprecise detection stamp.
     MARGIN = 1.2;
     BEATLENGTH = round( 60/heartrate * fs * MARGIN );
     MINAREA = round( 60/heartrate * fs * 0.05 );

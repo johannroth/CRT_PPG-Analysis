@@ -46,6 +46,11 @@ EXCLUDEBEATS = 0; % 0...MAXBEATS-3
 
 Results.Info.excludebeats = EXCLUDEBEATS;
 
+% Target sampling frequency after downsampling. All data will be provided
+% with this sampling frequency after downsampling. (default: 200)
+
+TARGETFS = 200; % Hz
+
 
 %% Data import and signal analysis
 % Loop through all patients (1-6)
@@ -83,9 +88,9 @@ for iPatient = patient
 %     fprintf('..removing powerline artifacts..\n');
 %     Data = filterPowerline(Data);
     
-    % Downsampling to 200 Hz using MATLAB decimate function with a fir
-    % filter with a Hamming window and order 30.
-    Data.fs = 200; % Hz, target sampling frequency for downsampling
+    % Downsampling to TARGETFS (default: 200 Hz) using MATLAB decimate
+    % function with a fir filter with a Hamming window and order 30.
+    Data.fs = TARGETFS; % Hz, target sampling frequency for downsampling
     fprintf('..downsampling data..\n');
     Data = downsampleData(Data,Data.fs);
 
@@ -168,7 +173,7 @@ end
 fprintf('..analysing beats..\n');
 % This is implemented in a second loop to be able to run this seperately if
 % needed.
-Results = analyseBeats(Results, patient);
+Results = analyseBeats(Results, TARGETFS, patient);
 Results = calculateDeltas(Results, patient);
 
 % for iPatient = patient

@@ -334,8 +334,30 @@ for i = 1:length(patient)
 end
 
 
+
+%% DEbug for getPulseWidth
+
+%% DEBUG
+beat = Results.Pt02.AV.ToRef.PpgCuff.meanBeat{1,1,3};
+fs = 200;
+t = 0:1/fs:(length(beat)-1)/fs;
+plot(t,beat);
+hold on;
+stairs(t,beat,'c-');
+plot(t(firstPass), beat(firstPass),'bo');
+plot(t(lastPass), beat(lastPass),'ro');
+plot(t, ones(1,length(t)).*beatMax/2 ,'k:');
+
+%%
+
 %% test
 
 
+test = rand(1,100);
+figure;
+plot(test(:));
+hold on;
+testIntegral = trapz(test);
+mean(test)*length(test);
 
 

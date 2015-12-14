@@ -1,9 +1,11 @@
-function [ UpdatedResults ] = analyseBeats( Results, patient )
+function [ UpdatedResults ] = analyseBeats( Results, fs, patient )
 %ANALYSEBEATS analyses beats in a given struct of results
 %   Parameters:
 %       Results (struct)
 %           Results struct created by main.m containing sorted beats for
 %           all patients
+%       fs (scalar)
+%           sampling frequency
 %       patient (int [1xN])
 %           List of patients where N patient numbers are specified
 %   Returns:
@@ -15,7 +17,8 @@ function [ UpdatedResults ] = analyseBeats( Results, patient )
 % Date: 11.12.2015
 
 %% List of parameters
-Results.Info.parameters = [{'pulseHeight'}];
+Results.Info.parameters = [{'pulseHeight'}, {'pulseWidth'}, {'pulseArea'}, {'heightOverWidth'}];
+Results.Info.parameterUnits = [{'a.u.'},{'ms'},{'a.u.'}, {'a.u.'}];
 
 Results.Info.nMeanBeats = 0;
 
@@ -50,8 +53,18 @@ for iPatient = 1:length(patient)                            % Pt01 / ... / Pt06
                             %% Here every single mean beat is processed ############
                             beat = Results.(patientId).(cMode).(cDirection).(cSignal).meanBeat{iChange, iPosition, iInterval};
                             
+                            pulseHeight = getPulseHeight(beat);
+                            pulseWidth = getPulseWidth(beat, fs);
+                            pulseArea = getPulseArea(beat);
+                            
                             Results.(patientId).(cMode).(cDirection).(cSignal).pulseHeight(iChange, iPosition, iInterval) ...
-                                = getPulseHeight(beat);
+                                = pulseHeight;
+                            Results.(patientId).(cMode).(cDirection).(cSignal).pulseWidth(iChange, iPosition, iInterval) ...
+                                = pulseWidth;
+                            Results.(patientId).(cMode).(cDirection).(cSignal).pulseArea(iChange, iPosition, iInterval) ...
+                                = pulseArea;
+                            Results.(patientId).(cMode).(cDirection).(cSignal).heightOverWidth(iChange, iPosition, iInterval) ...
+                                = pulseHeight/pulseArea;
                             
                             Results.Info.nMeanBeats = Results.Info.nMeanBeats + 1;
                             %% Here processing of the current beat is finished #####

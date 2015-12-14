@@ -1,7 +1,11 @@
 function [  ] = testPlots( Results, patient )
 
+relDelta = 'Delta';
+
 %% List of parameters
 listParameters = Results.Info.parameters;
+nParameters = length(listParameters);
+listUnits = Results.Info.parameterUnits;
 
 %% Set possible values by which the beats are sorted in Results struct
 listStimModes = [{'AV'},{'VV'}];
@@ -9,8 +13,23 @@ listDirections = [{'FromRef'},{'ToRef'}];
 listSignals = [{'PpgClip'}, {'PpgCuff'}];
 
 %% Loop through beats to calculate difference values
-for iParameter = listParameters
-    cParameter = char(iParameter);
+
+for iParameter = 1:nParameters % default: 1:nParameters
+    cParameter = char(listParameters(iParameter));
+    cUnit = char(listUnits(iParameter));
+    switch cParameter
+        case 'pulseHeight'
+            relDelta = 'Rel';
+        case 'pulseWidth'
+            relDelta = 'Delta';
+        case 'pulseArea'
+            relDelta = 'Rel';
+        case 'heightOverWidth'
+            relDelta = 'Rel';
+        otherwise
+            fprintf('Error, parameter not specified for plotting');
+    end
+    
     for iSignal = listSignals                                       % PpgClip / PpgCuff
         figure('Units', 'normalized','OuterPosition',[0, 0, 1, 1]);
         cSignal = char(iSignal);
@@ -27,9 +46,17 @@ for iParameter = listParameters
                 cReferenceInterval = Results.(patientId).(cMode).refInterval;
                 
                 subplot( 2, length(patient), (iMode-1)*length(patient) + iPatient);
-                plot(cReferenceInterval, 1,'ks');
-                hold on;
-                plot([-100 500], [1 1],'k:');
+                if strcmp(relDelta,'Rel')
+                    plot(cReferenceInterval, 1,'ks');
+                    hold on;
+                    plot([-100 500], [1 1],'k:');
+                else
+                    plot(cReferenceInterval, 0,'ks');
+                    hold on;
+                plot([-100 500], [0 0],'k:');
+                end
+                
+                
                 
                 for iDirection = listDirections                     % FromRef / ToRef
                     cDirection = char(iDirection);
@@ -57,7 +84,7 @@ for iParameter = listParameters
                     end
                     %% Scatterplots
                     % nan values in cValues and interval vector are removed
-                    cValues = Results.(patientId).(cMode).(cDirection).(cSignal).([cParameter 'Rel'])(:);
+                    cValues = Results.(patientId).(cMode).(cDirection).(cSignal).([cParameter relDelta])(:);
                     
                     nanMask = isnan(cValues);
                     cValues(nanMask) = [];
@@ -91,11 +118,11 @@ for iParameter = listParameters
                 % Quadratic regression is calculated based on values from
                 % both directions of changes (ToRef and FromRef).
                 % NaN values in cValues and interval vector are removed
-                cValues = [ Results.(patientId).(cMode).FromRef.(cSignal).([cParameter 'Rel'])(:); ...
-                            Results.(patientId).(cMode).ToRef.(cSignal).([cParameter 'Rel'])(:)];
+                cValues = [ Results.(patientId).(cMode).FromRef.(cSignal).([cParameter relDelta])(:); ...
+                    Results.(patientId).(cMode).ToRef.(cSignal).([cParameter relDelta])(:)];
                 nanMask = isnan(cValues);
                 cValues(nanMask) = [];
-                intervalPlotVector(nanMask) = [];                
+                intervalPlotVector(nanMask) = [];
                 %% Plot quadratic regressions
                 quadraticCoeff = polyfit(intervalPlotVector,cValues,2);
                 xRegression = linspace(intervals(1)-20,intervals(end)+20);
@@ -105,19 +132,74 @@ for iParameter = listParameters
                 
                 %% Labeling and adjusting plot
                 title([patientId ' ' cMode ' (' cSignal ')']);
-                ylabel('relative pulse height');
+                % Labeling depending on parameter
+                switch cParameter
+                    
+                    case 'pulseHeight'
+                        %% Pulse height
+                        if strcmp(relDelta,'Rel')
+                            ylabel(['relative pulse height [' cUnit '/' cUnit ']']);
+                            ymin = 0;
+                            ymax = 3;
+                            
+                        else
+                            ylabel(['delta pulse height [' cUnit ']']);
+                            ymin = -inf;
+                            ymax = inf;
+                        end
+                    case 'pulseWidth'
+                        %% Pulse width
+                        if strcmp(relDelta,'Rel')
+                            ylabel(['relative pulse width [' cUnit '/' cUnit ']']);
+                            ymin = 0.4;
+                            ymax = 1.4;
+                            
+                        else
+                            ylabel(['delta pulse width [' cUnit ']']);
+                            ymin = -100;
+                            ymax = 100;
+                        end
+                    case 'pulseArea'
+                        %% pulse area
+                        if strcmp(relDelta,'Rel')
+                            ylabel(['relative pulse area [' cUnit '/' cUnit ']']);
+                            ymin = 0.3;
+                            ymax = 2.5;
+                            
+                        else
+                            ylabel(['delta pulse area [' cUnit ']']);
+                            ymin = -inf;
+                            ymax = inf;
+                        end
+                    case 'heightOverWidth'
+                        %% height over width
+                        if strcmp(relDelta,'Rel')
+                            ylabel(['relative pulse height/width [' cUnit '/' cUnit ']']);
+                            ymin = -inf;
+                            ymax = inf;
+                        else
+                            ylabel(['pulse height/width [' cUnit ']']);
+                            ymin = -inf;
+                            ymax = inf;
+                        end
+                    otherwise
+                        fprintf('Error, parameter not specified for plotting');
+                end
+                % Different scaling depending on mode
                 switch cMode
                     case 'AV'
-                        %% Current change from reference to test interval
-                        axis([0 360 0 2])
+                        %% AV mode
+                        axis([0 360 ymin ymax])
                         xlabel('AV interval [ms]');
                     case 'VV'
-                        %% Current change from test to reference interval
-                        axis([-100 100 0 3])
+                        %% VV mode
+                        axis([-100 100 ymin ymax])
                         xlabel('VV interval [ms]');
                     otherwise
                         fprintf('Error');
                 end
+                
+                
                 
             end % Pt01/...
         end % AV/VV
