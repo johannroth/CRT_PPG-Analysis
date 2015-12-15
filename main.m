@@ -168,7 +168,7 @@ for iPatient = patient
         qualityPlots( Data, Results, iPatient, MAXBEATS, EXCLUDEBEATS );
     end   
 end
-
+fprintf('Done analysing signals!\n');
 %% Analysis of extracted Data
 fprintf('..analysing beats..\n');
 % This is implemented in a second loop to be able to run this seperately if

@@ -28,12 +28,16 @@ else
     % outter parts of beat will be removed (as there might be parts of the
     % following or preceeding beat)
     beat = beat(round( length(beat)*0.08 ):round( end-length(beat)*0.08 ));
+    
+    % upsample by factor of 4 to get more precise crossings
+    beat = interp(beat,4);
+    fs = 4*fs;
     beatMax = max(beat);
     
     firstPass = find(beat>beatMax/2,1);
     lastPass = find(beat>beatMax/2,1, 'last');
     
-    % width is calculated by subtracting the stamps of the passes. 2 is
+    % width is calculated by subtracting the stamps of the passes. 1 is
     % added to correct the error, that both stamps of passes have values
     % slightly higher than half the height of the beat.
     % (samples/fs = time [s], time [s] * 1000 = time [ms])

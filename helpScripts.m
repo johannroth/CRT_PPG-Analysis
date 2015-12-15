@@ -348,16 +348,94 @@ plot(t(firstPass), beat(firstPass),'bo');
 plot(t(lastPass), beat(lastPass),'ro');
 plot(t, ones(1,length(t)).*beatMax/2 ,'k:');
 
-%%
 
-%% test
+%% test ableitung
 
+% beat = Results.Pt02.AV.ToRef.PpgCuff.meanBeat{3,2,1}; % nice beat with dias max
+beat = Results.Pt02.AV.ToRef.PpgCuff.meanBeat{3,2,2}; % beat with no 2nd max
+% beat = Results.Pt03.AV.FromRef.PpgCuff.meanBeat{3,2,2}; % ugly beat
 
-test = rand(1,100);
+df = designfilt('differentiatorfir','FilterOrder',20,...
+                'PassbandFrequency',20,'StopbandFrequency',30,...
+                'SampleRate',200);
+% hfvt = fvtool(df,[1 -1],1,'MagnitudeDisplay','zero-phase','Fs',200);
+% legend(hfvt,'50th order FIR differentiator','Response of diff function');
+
+D = mean(grpdelay(df)); % filter delay
+slope = filter(df,[beat; zeros(D,1)]);
+slope = slope(D+1:end);
+
+% slope = getDerivative(beat);
+% curvature = getDerivative(slope);
+
 figure;
-plot(test(:));
+plot(beat);
 hold on;
-testIntegral = trapz(test);
-mean(test)*length(test);
+plot(slope*10,'r-');
+plot(1:length(beat),zeros(1,length(beat)),'k:');
+
+t1 = slope(1:end-1);
+t2 = slope(2:end);
+tt = t1.*t2;
+zeroPassings = find(tt < 0);
+plot(zeroPassings, beat(zeroPassings),'ro');
+
+
+
+
+
+%%
+fs = 200;
+t = 0:1/fs:(length(beat)-1)/fs;
+figure;
+stairs(t,beat);
+hold on;
+beat400 = interp(beat,2);
+t400 = 0:1/400:(length(beat400)-1)/400;
+stairs(t400,beat400);
+[beatDerivative, beatDerivative2] = getDerivatives( beat );
+
+beat = beat400;
+fs = 400;
+t = t400;
+
+stairs(t,20*beatDerivative);
+
+plot(t,zeros(1,length(t)),'k:');
+
+% % fir_order = 9; % uneven order required!
+% % if mod(fir_order,2)==1 % is odd
+% %     m=fix((fir_order-1)/2);
+% %     h=[-ones(1,m) 0 ones(1,m)]/m/(m+1);
+% % else % is even
+% %     m=fix(fir_order/2);
+% %     h=[-ones(1,m) ones(1,m)]/m^2;
+% % end
+% % D = mean(grpdelay(h));
+% fir_order = 4; % uneven order required!
+%     h=[-ones(1,fir_order) 0 ones(1,fir_order)]/fir_order/(fir_order+1);
+%     D = mean(grpdelay(h));
+% %%
+% beatDerivative = filter(-h,1,[beat; zeros(D,1)]);
+% beatDerivative = beatDerivative(D+1:end);
+
+% 
+% fir_order = 31; % uneven order required!
+% if mod(fir_order,2)==1 % is odd
+%     m=fix((fir_order-1)/2);
+%     h=[-ones(1,m) 0 ones(1,m)]/m/(m+1);
+% else % is even
+%     m=fix(fir_order/2);
+%     h=[-ones(1,m) ones(1,m)]/m^2;
+% end
+% D = mean(grpdelay(h));
+% beat2ndDerivative = filter(-h,1,[beatDerivative; zeros(D,1)]);
+% beat2ndDerivative = beat2ndDerivative(D+1:end);
+
+
+beat = Results.Pt05.VV.ToRef.PpgCuff.meanBeat{2,2,3};
+slope = getDerivative(beat);
+getIPA(beat, slope, 200);
+
 
 

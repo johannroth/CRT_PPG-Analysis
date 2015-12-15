@@ -1,6 +1,8 @@
 function [  ] = testPlots( Results, patient )
 
 relDelta = 'Delta';
+maxbeats = Results.Info.maxbeats;
+excludebeats = Results.Info.excludebeats;
 
 %% List of parameters
 listParameters = Results.Info.parameters;
@@ -14,9 +16,10 @@ listSignals = [{'PpgClip'}, {'PpgCuff'}];
 
 %% Loop through beats to calculate difference values
 
-for iParameter = 1:nParameters % default: 1:nParameters
+for iParameter = 6 % default: 1:nParameters
     cParameter = char(listParameters(iParameter));
     cUnit = char(listUnits(iParameter));
+    %% Define relDelta for each parameter
     switch cParameter
         case 'pulseHeight'
             relDelta = 'Rel';
@@ -26,10 +29,14 @@ for iParameter = 1:nParameters % default: 1:nParameters
             relDelta = 'Rel';
         case 'heightOverWidth'
             relDelta = 'Rel';
+        case 'crestTime'
+            relDelta = 'Delta';
+        case 'ipa'
+            relDelta = 'Rel';
         otherwise
             fprintf('Error, parameter not specified for plotting');
     end
-    
+    %% Loop through all signals
     for iSignal = listSignals                                       % PpgClip / PpgCuff
         figure('Units', 'normalized','OuterPosition',[0, 0, 1, 1]);
         cSignal = char(iSignal);
@@ -53,7 +60,7 @@ for iParameter = 1:nParameters % default: 1:nParameters
                 else
                     plot(cReferenceInterval, 0,'ks');
                     hold on;
-                plot([-100 500], [0 0],'k:');
+                    plot([-100 500], [0 0],'k:');
                 end
                 
                 
@@ -91,10 +98,14 @@ for iParameter = 1:nParameters % default: 1:nParameters
                     intervalPlotVector(nanMask) = [];
                     plot(intervalPlotVector, cValues, cLineStylePoints);
                     %% Plot quadratic regressions
-                    quadraticCoeff = polyfit(intervalPlotVector,cValues,2);
-                    xRegression = linspace(intervals(1)-20,intervals(end)+20);
-                    yRegression = polyval(quadraticCoeff, xRegression);
-                    plot(xRegression, yRegression, cLineStyleRegression);
+                    % if there enough data points
+                    if length(cValues) > 3
+                        quadraticCoeff = polyfit(intervalPlotVector,cValues,2);
+                        xRegression = linspace(intervals(1)-20,intervals(end)+20);
+                        yRegression = polyval(quadraticCoeff, xRegression);
+                        plot(xRegression, yRegression, cLineStyleRegression);
+                    end
+                    
                 end % FromRef/ToRef
                 
                 %% Calculate values for combined quadratic regression
@@ -124,10 +135,13 @@ for iParameter = 1:nParameters % default: 1:nParameters
                 cValues(nanMask) = [];
                 intervalPlotVector(nanMask) = [];
                 %% Plot quadratic regressions
-                quadraticCoeff = polyfit(intervalPlotVector,cValues,2);
-                xRegression = linspace(intervals(1)-20,intervals(end)+20);
-                yRegression = polyval(quadraticCoeff, xRegression);
-                plot(xRegression, yRegression, 'g-', 'LineWidth', 1.5);
+                % if there enough data points
+                if length(cValues) > 3
+                    quadraticCoeff = polyfit(intervalPlotVector,cValues,2);
+                    xRegression = linspace(intervals(1)-20,intervals(end)+20);
+                    yRegression = polyval(quadraticCoeff, xRegression);
+                    plot(xRegression, yRegression, 'g-', 'LineWidth', 1.5);
+                end
                 
                 
                 %% Labeling and adjusting plot
@@ -178,7 +192,29 @@ for iParameter = 1:nParameters % default: 1:nParameters
                             ymin = -inf;
                             ymax = inf;
                         else
-                            ylabel(['pulse height/width [' cUnit ']']);
+                            ylabel(['delta pulse height/width [' cUnit ']']);
+                            ymin = -inf;
+                            ymax = inf;
+                        end
+                    case 'crestTime'
+                        %% crest time
+                        if strcmp(relDelta,'Rel')
+                            ylabel(['relative cresttime [' cUnit '/' cUnit ']']);
+                            ymin = -inf;
+                            ymax = inf;
+                        else
+                            ylabel(['delta crest time [' cUnit ']']);
+                            ymin = -inf;
+                            ymax = inf;
+                        end
+                    case 'ipa'
+                        %% ipa
+                        if strcmp(relDelta,'Rel')
+                            ylabel(['relative IPA [' cUnit '/' cUnit ']']);
+                            ymin = -inf;
+                            ymax = inf;
+                        else
+                            ylabel(['delta IPA [' cUnit ']']);
                             ymin = -inf;
                             ymax = inf;
                         end
@@ -198,11 +234,21 @@ for iParameter = 1:nParameters % default: 1:nParameters
                     otherwise
                         fprintf('Error');
                 end
-                
-                
+                %% Save plots to png
                 
             end % Pt01/...
         end % AV/VV
+        targetDirectory = ['../results/plots/ScatterplotsRegression/EX' ...
+            num2str(excludebeats) '_MAX' num2str(maxbeats)];
+        if ~exist(targetDirectory, 'dir')
+            mkdir(targetDirectory);
+        end
+        set(gcf,'PaperPositionMode','auto');
+        print(gcf,...
+            [targetDirectory '/' cParameter '_' ...
+            cSignal '_EX' num2str(excludebeats) ...
+            '_MAX' num2str(maxbeats)],'-dpng','-r0');
+        
     end % PpgClip/PpgCuff
 end % Parameters
 

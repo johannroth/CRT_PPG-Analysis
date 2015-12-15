@@ -17,8 +17,12 @@ function [ UpdatedResults ] = analyseBeats( Results, fs, patient )
 % Date: 11.12.2015
 
 %% List of parameters
-Results.Info.parameters = [{'pulseHeight'}, {'pulseWidth'}, {'pulseArea'}, {'heightOverWidth'}];
-Results.Info.parameterUnits = [{'a.u.'},{'ms'},{'a.u.'}, {'a.u.'}];
+Results.Info.parameters = [{'pulseHeight'}, {'pulseWidth'},...
+                           {'pulseArea'}, {'heightOverWidth'},...
+                           {'crestTime'}, {'ipa'}];
+Results.Info.parameterUnits = [{'a.u.'}, {'ms'},...
+                               {'a.u.'}, {'a.u.'},...
+                               {'ms'}, {'a.u.'}];
 
 Results.Info.nMeanBeats = 0;
 
@@ -52,10 +56,13 @@ for iPatient = 1:length(patient)                            % Pt01 / ... / Pt06
                         for iInterval = 1:nIntervals        % AV40 / ... / VV80
                             %% Here every single mean beat is processed ############
                             beat = Results.(patientId).(cMode).(cDirection).(cSignal).meanBeat{iChange, iPosition, iInterval};
+                            slope = getDerivative(beat);
                             
                             pulseHeight = getPulseHeight(beat);
                             pulseWidth = getPulseWidth(beat, fs);
                             pulseArea = getPulseArea(beat);
+                            crestTime = getCrestTime(beat, fs);
+                            ipa = getIPA(beat, slope);
                             
                             Results.(patientId).(cMode).(cDirection).(cSignal).pulseHeight(iChange, iPosition, iInterval) ...
                                 = pulseHeight;
@@ -65,6 +72,10 @@ for iPatient = 1:length(patient)                            % Pt01 / ... / Pt06
                                 = pulseArea;
                             Results.(patientId).(cMode).(cDirection).(cSignal).heightOverWidth(iChange, iPosition, iInterval) ...
                                 = pulseHeight/pulseArea;
+                            Results.(patientId).(cMode).(cDirection).(cSignal).crestTime(iChange, iPosition, iInterval) ...
+                                = crestTime;
+                            Results.(patientId).(cMode).(cDirection).(cSignal).ipa(iChange, iPosition, iInterval) ...
+                                = ipa;
                             
                             Results.Info.nMeanBeats = Results.Info.nMeanBeats + 1;
                             %% Here processing of the current beat is finished #####
