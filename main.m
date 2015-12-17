@@ -166,15 +166,21 @@ for iPatient = patient
     if QUALITYPLOTS
         fprintf('..creating quality plots..\n');
         qualityPlots( Data, Results, iPatient, MAXBEATS, EXCLUDEBEATS );
-    end   
+    end
+    
+    %% Extract parameters calculated by Finometer/BeatScope software
+    fprintf('..extracting beatscope parameters..\n');
+    Results = extractFinoParams( Results, Data, Metadata, iPatient, MAXBEATS, EXCLUDEBEATS );
 end
-fprintf('Done analysing signals!\n');
+
 %% Analysis of extracted Data
-fprintf('..analysing beats..\n');
+fprintf('Analysing beats..\n');
 % This is implemented in a second loop to be able to run this seperately if
 % needed.
 Results = analyseBeats(Results, TARGETFS, patient);
 Results = calculateDeltas(Results, patient);
+
+% testPlots( Results, patient );
 
 % for iPatient = patient
 %     patientId = ['Pt0' int2str(iPatient)];
@@ -183,8 +189,11 @@ Results = calculateDeltas(Results, patient);
 %     
 % end
 
-
-
+%% Save Results Struct for current analysis
+save(['../results/matlab/Results_MAX' num2str(MAXBEATS) '_EX' num2str(EXCLUDEBEATS) '.mat'],'-struct','Results');
+    
+% for later import use:
+% Results = load(['../results/matlab/Results_MAX' num2str(MAXBEATS) '_EX' num2str(EXCLUDEBEATS) '.mat']);
 
 %% Restore old path
 path(oldpath);

@@ -32,7 +32,7 @@ function [ DataStructDs ] = downsampleData( DataStruct, targetFs )
 
         factor = DataStruct.StimulationModes.(char(stimulationMode)).fs/targetFs;
         DataStructDs.StimulationModes.(char(stimulationMode)).samplestamp = ...
-            round(DataStruct.StimulationModes.(char(stimulationMode)).samplestamp/factor);
+            round( DataStruct.StimulationModes.(char(stimulationMode)).samplestamp / factor );
         DataStructDs.StimulationModes.(char(stimulationMode)).fs = targetFs;
     end
 

@@ -16,16 +16,16 @@ stairs(Data.Signals.Bp.data);
 stamp = Data.BeatDetections.Merged.samplestamp;
 
 % use this mask to select a specific part of the signal
-        startSecond = 830; % artifact in pt2
-        stopSecond = 840;
+startSecond = 830; % artifact in pt2
+stopSecond = 840;
 samplestampmask = logical((stamp > startSecond*1000/5) .* (stamp < stopSecond*1000/5));
 
 %% ########## Initialize test
 test = extractBeats(Data.Signals.PpgCuff.data, ...
-                    Data.BeatDetections.Merged.samplestamp(samplestampmask), ...
-                    Data.Signals.PpgClip.fs, ...
-                    Metadata.heartRate(iPatient), ...
-                    true);
+    Data.BeatDetections.Merged.samplestamp(samplestampmask), ...
+    Data.Signals.PpgClip.fs, ...
+    Metadata.heartRate(iPatient), ...
+    true);
 %% ########## Initialize test2 + plot
 [test2,~, quality] = extractGoodBeats(test,Data.Signals.PpgClip.fs,Metadata.heartRate(iPatient), iPatient);
 
@@ -136,14 +136,14 @@ iChange = 1;
 iInterval = 1;
 %%
 firstPossibleSample = AV.FromRef.stamps(iChange, iInterval) + ...
-                      rrInterval*EXCLUDEBEATS*fs;
+    rrInterval*EXCLUDEBEATS*fs;
 lastPossibleSample = AV.FromRef.stamps(iChange, iInterval) + ...
-                     (MAXBEATS)*rrInterval*fs;                 
-                 
+    (MAXBEATS)*rrInterval*fs;
+
 detectionMask = logical( ...
     (Data.BeatDetections.Merged.samplestamp > firstPossibleSample) .* ...
     (Data.BeatDetections.Merged.samplestamp < lastPossibleSample)...
-                );
+    );
 detections = Data.BeatDetections.Merged.samplestamp(detectionMask);
 while length(detections) > MAXBEATS-EXCLUDEBEATS
     detections = detections(1:end-1);
@@ -152,10 +152,10 @@ end
 currentSignal = {'PpgClip'};
 
 includedBeats = extractBeats(Data.Signals.(char(currentSignal)).data,...
-                         detections,...
-                         fs,...
-                         heartRate,...
-                         true);
+    detections,...
+    fs,...
+    heartRate,...
+    true);
 [includedGoodBeats, quality] = extractGoodBeats(includedBeats, fs, heartRate, iPatient);
 %% extractModes test: plot AV and VV.fromRef vs Stimulation mode in data
 figure;
@@ -206,7 +206,7 @@ plot(1:100)
 set(qualityPlot, 'visible', 'on')
 close(qualityPlot)
 % saveas(gcf,'file.fig','fig')
-% 
+%
 % openfig('file.fig','new','visible')
 
 %% test for folders in working directory
@@ -261,10 +261,10 @@ text(t(end)*0.9,max(testBeatMean)*0.9, ['Q = ' num2str(quality)] , 'HorizontalAl
 %% get a beat from results struct
 
 beats = Results.(patientId).AV.ToRef.PpgCuff.beats{ ...
-                                             1, ... % change (1...3)
-                                             2, ... % position (1... before, 2... after)
-                                             1 ...  % interval (1...x)
-                                            };              % ( x = length(Results.(patientId).(stimMode).interval ))
+    1, ... % change (1...3)
+    2, ... % position (1... before, 2... after)
+    1 ...  % interval (1...x)
+    };              % ( x = length(Results.(patientId).(stimMode).interval ))
 figure();
 plot(beats, 'k:');
 hold on;
@@ -303,16 +303,16 @@ hold on;
 plot(1:length(quality),ones(1,length(quality)).*mean(quality));
 
 
-                
-                
-                
-                
+
+
+
+
 %% test to get all qualities
 beats = Results.(patientId).AV.ToRef.PpgCuff.quality{ ...
-                                             1, ... % change (1...3)
-                                             2, ... % position (1... before, 2... after)
-                                             1 ...  % interval (1...x)
-                                            };
+    1, ... % change (1...3)
+    2, ... % position (1... before, 2... after)
+    1 ...  % interval (1...x)
+    };
 beats(:)
 
 
@@ -356,8 +356,8 @@ beat = Results.Pt02.AV.ToRef.PpgCuff.meanBeat{3,2,2}; % beat with no 2nd max
 % beat = Results.Pt03.AV.FromRef.PpgCuff.meanBeat{3,2,2}; % ugly beat
 
 df = designfilt('differentiatorfir','FilterOrder',20,...
-                'PassbandFrequency',20,'StopbandFrequency',30,...
-                'SampleRate',200);
+    'PassbandFrequency',20,'StopbandFrequency',30,...
+    'SampleRate',200);
 % hfvt = fvtool(df,[1 -1],1,'MagnitudeDisplay','zero-phase','Fs',200);
 % legend(hfvt,'50th order FIR differentiator','Response of diff function');
 
@@ -419,7 +419,7 @@ plot(t,zeros(1,length(t)),'k:');
 % beatDerivative = filter(-h,1,[beat; zeros(D,1)]);
 % beatDerivative = beatDerivative(D+1:end);
 
-% 
+%
 % fir_order = 31; % uneven order required!
 % if mod(fir_order,2)==1 % is odd
 %     m=fix((fir_order-1)/2);
@@ -436,6 +436,57 @@ plot(t,zeros(1,length(t)),'k:');
 beat = Results.Pt05.VV.ToRef.PpgCuff.meanBeat{2,2,3};
 slope = getDerivative(beat);
 getIPA(beat, slope, 200);
+
+
+%% tests extract fino params
+patientId = 'Pt06';
+currentMode = {'AV'};
+currentFlank = {'ToRef'};
+iChange = 1;
+iInterval = 1;
+heartRate = Metadata.heartRate(6);
+rrInterval = 60/heartRate;
+fs = Data.fs;
+
+bsParameters = [{'BpDiastolic'}, {'BpMean'}, ...
+    {'BpSystolic'}, {'CardiacOutput'}, ...
+    {'Heartrate'}, {'Lvet'}, ...
+    {'MaximumSlope'}, {'PulseInterval'}, ...
+    {'StrokeVolume'}, {'Tpr'}];
+
+nIntervals = length(Results.(patientId).(char(currentMode)).interval);
+for iParameter = 1:length(bsParameters)
+    cParameter = char(bsParameters(iParameter));
+    Results.(patientId).(char(currentMode)).(char(currentFlank)).BsBp.(cParameter) = zeros(3,2,nIntervals);
+end
+
+lastPossibleSample = Results.(patientId).(char(currentMode)).(char(currentFlank)).stamps(iChange, iInterval) - ...
+    rrInterval*fs - ...
+    rrInterval*EXCLUDEBEATS*fs;
+firstPossibleSample = Results.(patientId).(char(currentMode)).(char(currentFlank)).stamps(iChange, iInterval) - ...
+    rrInterval*fs - ...
+    (MAXBEATS+0.5) * rrInterval * fs;
+% Detection mask is taken from BeatScope detections only,
+% because only for those stamps, there are corresponding
+% calculated values.
+detectionMask = logical( ...
+    (Data.BeatDetections.BsBp.samplestamp > firstPossibleSample) .* ...
+    (Data.BeatDetections.BsBp.samplestamp < lastPossibleSample) );
+
+detections = Data.BeatDetections.BsBp.samplestamp(detectionMask);
+while length(detections) > MAXBEATS-EXCLUDEBEATS
+    detections = detections(2:end);
+end
+
+% Make Calculations for both signals
+
+for iParameter = 1:length(bsParameters)
+    cParameter = char(bsParameters(iParameter));
+    cValues = Data.BsValues.(cParameter)(detections);
+    meanParameter = mean(cValues);
+    Results.(patientId).(char(currentMode)).(char(currentFlank)).BsBp.(cParameter)(iChange, 1, iInterval)...
+        = meanParameter;
+end
 
 
 

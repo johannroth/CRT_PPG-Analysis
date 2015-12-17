@@ -6,17 +6,19 @@ excludebeats = Results.Info.excludebeats;
 
 %% List of parameters
 listParameters = Results.Info.parameters;
+listBsParameters = Results.Info.bsParameters;
 nParameters = length(listParameters);
+nBsParameters = length(listBsParameters);
 listUnits = Results.Info.parameterUnits;
+listBsUnits = Results.Info.bsParameterUnits;
 
 %% Set possible values by which the beats are sorted in Results struct
 listStimModes = [{'AV'},{'VV'}];
 listDirections = [{'FromRef'},{'ToRef'}];
 listSignals = [{'PpgClip'}, {'PpgCuff'}];
 
-%% Loop through beats to calculate difference values
-
-for iParameter = 6 % default: 1:nParameters
+%% Loop through parameters from PPG signal
+for iParameter = 1:nParameters % default: 1:nParameters
     cParameter = char(listParameters(iParameter));
     cUnit = char(listUnits(iParameter));
     %% Define relDelta for each parameter
@@ -251,7 +253,256 @@ for iParameter = 6 % default: 1:nParameters
         
     end % PpgClip/PpgCuff
 end % Parameters
-
+%% Loop through parameters from BP signal (BeatScope/Finometer)
+for iParameter = 1:nBsParameters % default: 1:nBsParameters
+    cParameter = char(listBsParameters(iParameter));
+    cUnit = char(listBsUnits(iParameter));
+    %% Define relDelta for each parameter
+    switch cParameter
+        case 'pulseHeight'
+            relDelta = 'Rel';
+        otherwise
+            relDelta = 'Delta';
+    end
+    %% Loop through all signals
+    
+    figure('Units', 'normalized','OuterPosition',[0, 0, 1, 1]);
+    cSignal = 'BsBp';
+    for iMode = 1:length(listStimModes)                         % AV / VV
+        cMode = char(listStimModes(iMode));
+        
+        for iPatient = 1:length(patient)                        % Pt01 / ... / Pt06
+            patientId = ['Pt0' num2str(patient(iPatient))];
+            intervals = Results.(patientId).(cMode).interval;
+            nIntervals = length(intervals);
+            cReferenceInterval = Results.(patientId).(cMode).refInterval;
+            
+            subplot( 2, length(patient), (iMode-1)*length(patient) + iPatient);
+            if strcmp(relDelta,'Rel')
+                plot(cReferenceInterval, 1,'ks');
+                hold on;
+                plot([-100 500], [1 1],'k:');
+            else
+                plot(cReferenceInterval, 0,'ks');
+                hold on;
+                plot([-100 500], [0 0],'k:');
+            end
+            
+            for iDirection = listDirections                     % FromRef / ToRef
+                cDirection = char(iDirection);
+                %% Define linestyles for different directions
+                switch cDirection
+                    case 'FromRef'
+                        %% Current change from reference to test interval
+                        cLineStylePoints = 'rx';
+                        cLineStyleRegression = 'r-.';
+                    case 'ToRef'
+                        %% Current change from test to reference interval
+                        cLineStylePoints = 'bo';
+                        cLineStyleRegression = 'b-.';
+                    otherwise
+                        fprintf('Error');
+                end
+                
+                %% Create Vector containing intervals suitable for plotting
+                % i.e. as a vector: [40 40 40 80 80 80 .... 320 320 320]
+                % Every interval is used three times (3 changes per direction)
+                intervalPlotVector = zeros(3*nIntervals,1);
+                for iInterval = 1:nIntervals
+                    for iChange = 1:3
+                        intervalPlotVector((iInterval-1)*3+iChange) = intervals(iInterval);
+                    end
+                end
+                %% Scatterplots
+                % nan values in cValues and interval vector are removed
+                cValues = Results.(patientId).(cMode).(cDirection).(cSignal).([cParameter relDelta])(:);
+                
+                nanMask = isnan(cValues);
+                cValues(nanMask) = [];
+                intervalPlotVector(nanMask) = [];
+                plot(intervalPlotVector, cValues, cLineStylePoints);
+                %% Plot quadratic regressions
+                % if there enough data points
+                if length(cValues) > 3
+                    quadraticCoeff = polyfit(intervalPlotVector,cValues,2);
+                    xRegression = linspace(intervals(1)-20,intervals(end)+20);
+                    yRegression = polyval(quadraticCoeff, xRegression);
+                    plot(xRegression, yRegression, cLineStyleRegression);
+                end
+                
+            end % FromRef/ToRef
+            
+            %% Calculate values for combined quadratic regression
+            % for combined data (ToRef and FromRef)
+            
+            % Create Vector containing intervals suitable for plotting
+            % i.e. as a vector: [40 40 40 80 80 80 .... 320 320 320]
+            % Every interval is used three times (3 changes per direction)
+            
+            % length has to be double to include changes in both
+            % directions
+            intervalPlotVector = zeros(6*nIntervals,1);
+            for iInterval = 1:nIntervals
+                for iChange = 1:3
+                    intervalPlotVector((iInterval-1)*3+iChange) = intervals(iInterval);
+                    intervalPlotVector(3*nIntervals + (iInterval-1)*3+iChange) = intervals(iInterval);
+                end
+            end
+            
+            
+            % Quadratic regression is calculated based on values from
+            % both directions of changes (ToRef and FromRef).
+            % NaN values in cValues and interval vector are removed
+            cValues = [ Results.(patientId).(cMode).FromRef.(cSignal).([cParameter relDelta])(:); ...
+                Results.(patientId).(cMode).ToRef.(cSignal).([cParameter relDelta])(:)];
+            nanMask = isnan(cValues);
+            cValues(nanMask) = [];
+            intervalPlotVector(nanMask) = [];
+            %% Plot combined quadratic regressions
+            % if there enough data points
+            if length(cValues) > 3
+                quadraticCoeff = polyfit(intervalPlotVector,cValues,2);
+                xRegression = linspace(intervals(1)-20,intervals(end)+20);
+                yRegression = polyval(quadraticCoeff, xRegression);
+                plot(xRegression, yRegression, 'g-', 'LineWidth', 1.5);
+            end
+            
+            
+            %% Labeling and adjusting plot
+            title([patientId ' ' cMode ' (' cSignal ')']);
+            % Labeling depending on parameter
+            switch cParameter
+                
+                case 'BpDiastolic'
+                    %% Bp diastolic
+                    if strcmp(relDelta,'Rel')
+                        ylabel(['relative diastolic BP [' cUnit '/' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                        
+                    else
+                        ylabel(['delta diastolic BP [' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                    end
+                case 'BpMean'
+                    %% Bp mean
+                    if strcmp(relDelta,'Rel')
+                        ylabel(['relative mean BP [' cUnit '/' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                        
+                    else
+                        ylabel(['delta mean BP [' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                    end
+                case 'BpSystolic'
+                    %% Bp systolic
+                    if strcmp(relDelta,'Rel')
+                        ylabel(['relative systolic BP [' cUnit '/' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                        
+                    else
+                        ylabel(['delta systolic BP [' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                    end
+                case 'CardiacOutput'
+                    %% Cardiac output
+                    if strcmp(relDelta,'Rel')
+                        ylabel(['relative cardiac output [' cUnit '/' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                        
+                    else
+                        ylabel(['delta cardiac output [' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                    end
+                case 'Lvet'
+                    %% LVET
+                    if strcmp(relDelta,'Rel')
+                        ylabel(['relative LVET [' cUnit '/' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                        
+                    else
+                        ylabel(['delta LVET [' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                    end
+                case 'MaximumSlope'
+                    %% Maximum slope
+                    if strcmp(relDelta,'Rel')
+                        ylabel(['relative maximum slope [' cUnit '/' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                        
+                    else
+                        ylabel(['delta maximum slope [' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                    end
+                case 'StrokeVolume'
+                    %% Stroke volume
+                    if strcmp(relDelta,'Rel')
+                        ylabel(['relative stroke volume [' cUnit '/' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                        
+                    else
+                        ylabel(['delta stroke volume [' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                    end
+                case 'Tpr'
+                    %% TPR
+                    if strcmp(relDelta,'Rel')
+                        ylabel(['relative TPR [' cUnit '/' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                        
+                    else
+                        ylabel(['delta TPR [' cUnit ']']);
+                        ymin = -inf;
+                        ymax = inf;
+                    end
+                    
+                otherwise
+                    fprintf(['Error, parameter ' cParameter ' not specified for plotting\n']);
+            end
+            % Different scaling depending on mode
+            switch cMode
+                case 'AV'
+                    %% AV mode
+                    axis([0 360 ymin ymax])
+                    xlabel('AV interval [ms]');
+                case 'VV'
+                    %% VV mode
+                    axis([-100 100 ymin ymax])
+                    xlabel('VV interval [ms]');
+                otherwise
+                    fprintf('Error');
+            end
+            %% Save plots to png
+            
+        end % Pt01/...
+    end % AV/VV
+    targetDirectory = ['../results/plots/ScatterplotsRegression/EX' ...
+        num2str(excludebeats) '_MAX' num2str(maxbeats)];
+    if ~exist(targetDirectory, 'dir')
+        mkdir(targetDirectory);
+    end
+    set(gcf,'PaperPositionMode','auto');
+    print(gcf,...
+        [targetDirectory '/' cParameter '_' ...
+        cSignal '_EX' num2str(excludebeats) ...
+        '_MAX' num2str(maxbeats)],'-dpng','-r0');
+    
+    
+end % BS Parameters
 end
 
 
