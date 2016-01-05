@@ -1,13 +1,11 @@
-testSignal = Data.Signals.Bp.data(signalStart:signalEnd);
-sample = signalStart:signalEnd;
+test1 = magic(4);
 figure;
-plot(sample*5/1000, testSignal);
+imagesc(test1);
 
-intervalStamps = Data.StimulationModes.AV.samplestamp;
-intervalValues = Data.StimulationModes.AV.value;
-hold on;
-stairs(intervalStamps*5/1000,intervalValues);
-
-axis([signalStart*5/1000 signalEnd*5/1000 -inf inf]);
-
-
+xLabels = {
+    'Pt 1'
+    'Pt 2'
+    'Pt 3'
+    'Pt 4'};
+set(gca,'XtickLabel', listParameters(1:4));
+set(gca,'XTick', 1:4);
