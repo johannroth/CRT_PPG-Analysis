@@ -41,28 +41,28 @@ function [ goodBeats, quality ] = extractGoodBeats( beats, fs, heartrate, iPatie
     goodBeat = 1:size(beats,2);
     % use 'goodBeat(i) = 0' to mark a bad beat
 
-    %% Remove beats with artifacts or non-expected morphology (5 Criteria)
+    %% Remove beats with artifacts or non-expected morphology (3 Criteria)
     for iCurrentBeat = 1:size(beats,2)
         %% Criteria to determine if a beat is bad
         % each criterion has to be false to allow a beat to be passed on
         % as good beat.
 
-        %% Criterion 1: local minimum around beginning of beat
-        % the first minimum may not be after a certain point in the beat
-        [~, index] = min(beats(1:end/2,iCurrentBeat));
-        if (index > 2*margin)
-            goodBeat(iCurrentBeat) = 0;
-            continue;
-        end
-        %% Criterion 2: local minimum around end of beat
-        % the second minimum may not be before a certain point in the
-        % beat
-        [~, index] = min(beats(end/2:end,iCurrentBeat));
-        if ( index < (length(beats(end/2:end,iCurrentBeat))-1.3*margin) )
-            goodBeat(iCurrentBeat) = 0;
-            continue;
-        end
-        %% Criterion 3: more peaks than usual
+%         %% Criterion 1: local minimum around beginning of beat
+%         % the first minimum may not be after a certain point in the beat
+%         [~, index] = min(beats(1:end/2,iCurrentBeat));
+%         if (index > 2*margin)
+%             goodBeat(iCurrentBeat) = 0;
+%             continue;
+%         end
+%         %% Criterion 2: local minimum around end of beat
+%         % the second minimum may not be before a certain point in the
+%         % beat
+%         [~, index] = min(beats(end/2:end,iCurrentBeat));
+%         if ( index < (length(beats(end/2:end,iCurrentBeat))-1.3*margin) )
+%             goodBeat(iCurrentBeat) = 0;
+%             continue;
+%         end
+        %% Criterion 1: more peaks than usual
         % a normal beat has 1 to 3 peaks
         [~,~,peakWidth,~] = findpeaks(beats(:,iCurrentBeat));
         expectedPeakWidth = 0.02 * fs;
@@ -70,14 +70,14 @@ function [ goodBeats, quality ] = extractGoodBeats( beats, fs, heartrate, iPatie
             goodBeat(iCurrentBeat) = 0;
             continue;
         end
-        %% Criterion 4: more than 15% of beat below zero
+        %% Criterion 2: more than 15% of beat below zero
         % if more than 15% of values of the beat are lower than zero after
         % drift removal, beat is excluded
         if mean(beats(:,iCurrentBeat) < 0) > 0.15
             goodBeat(iCurrentBeat) = 0;
             continue;
         end
-        %% Criterion 5: maximum height of negative values
+        %% Criterion 3: maximum height of negative values
         % if highest negative value has absolute value of over 10% of
         % highest positive value, beat is excluded
         if abs(min(beats(:,iCurrentBeat))) > max(beats(:,iCurrentBeat))

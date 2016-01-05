@@ -28,7 +28,7 @@ patient = 1:6;
 FORCEIMPORT = false;
 
 % create quality plots (takes up to 10 minutes!)
-QUALITYPLOTS = false;
+QUALITYPLOTS = true;
 
 % Amount of beats before and after each change of the stimulation interval
 % that are included in calculation. Maximum: 15 beats (maximum time: 10s,
