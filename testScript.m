@@ -1,11 +1,4 @@
-test1 = magic(4);
+x = [ 1 2 ; 3 4 ; 5 6];
+y = [3 5; 6 2; 3 7];
 figure;
-imagesc(test1);
-
-xLabels = {
-    'Pt 1'
-    'Pt 2'
-    'Pt 3'
-    'Pt 4'};
-set(gca,'XtickLabel', listParameters(1:4));
-set(gca,'XTick', 1:4);
+plot(x',y');

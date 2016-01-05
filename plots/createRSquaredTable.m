@@ -11,7 +11,7 @@ patient = 1:6;
 nPatients = length(patient);
 
 listStimModes = [{'AV'},{'VV'}];
-
+relDelta = 3; % 3 for rel, 2 for delta
 
 %% Create cell array containing rSquared values (AV, FromRef AND ToRef, PPGClip)
 for iMode = 1:length(listStimModes)
@@ -25,7 +25,7 @@ for iPatient = 1:nPatients                      % Pt01 / ... / Pt06
     % Loop through PPG-parameters
     for iParameter = 1:nParameters
         cParameter = char(listParameters(iParameter));
-        rSquaredTable{1+iParameter,1} = [cParameter ' (Clip)'];;
+        rSquaredTable{1+iParameter,1} = [cParameter ' (Clip)'];
         fromRefScatterplotData = Results.(patientId).(cMode).FromRef.('PpgClip').ScatterplotData.(cParameter);
         toRefScatterplotData = Results.(patientId).(cMode).ToRef.('PpgClip').ScatterplotData.(cParameter);
         scatterplotData = [fromRefScatterplotData; toRefScatterplotData];
@@ -33,7 +33,7 @@ for iPatient = 1:nPatients                      % Pt01 / ... / Pt06
             rSquaredTable{1+iParameter,iPatient + 1} = 0;
         else
         x = scatterplotData(:,1);
-        y = scatterplotData(:,3);
+        y = scatterplotData(:,relDelta);
         [~,~,rSquared,~] = calculateRegression(x,y);
         rSquaredTable{1+iParameter,iPatient + 1} = rSquared;
         end
@@ -48,7 +48,7 @@ for iPatient = 1:nPatients                      % Pt01 / ... / Pt06
             rSquaredTable{1+nParameters+iParameter,iPatient + 1} = 0;
         else
         x = scatterplotData(:,1);
-        y = scatterplotData(:,3);
+        y = scatterplotData(:,relDelta);
         [~,~,rSquared,~] = calculateRegression(x,y);
         rSquaredTable{1+nParameters+iParameter,iPatient + 1} = rSquared;
         end
@@ -56,7 +56,7 @@ for iPatient = 1:nPatients                      % Pt01 / ... / Pt06
     % Loop through BeatScope parameters
     for iParameter = 1:nBsParameters
         cParameter = char(listBsParameters(iParameter));
-        rSquaredTable{1+2*nParameters+iParameter,1} = cParameter;
+        rSquaredTable{1+2*nParameters+iParameter,1} = [cParameter ' (Fino)'];
         fromRefScatterplotData = Results.(patientId).(cMode).FromRef.BsBp.ScatterplotData.(cParameter);
         toRefScatterplotData = Results.(patientId).(cMode).ToRef.BsBp.ScatterplotData.(cParameter);
         scatterplotData = [fromRefScatterplotData; toRefScatterplotData];
@@ -64,7 +64,7 @@ for iPatient = 1:nPatients                      % Pt01 / ... / Pt06
             rSquaredTable{1+2*nParameters+iParameter,iPatient + 1} = 0;
         else
         x = scatterplotData(:,1);
-        y = scatterplotData(:,3);
+        y = scatterplotData(:,relDelta);
         [~,~,rSquared,~] = calculateRegression(x,y);
         rSquaredTable{1+2*nParameters+iParameter,iPatient + 1} = rSquared;
         end
@@ -85,6 +85,6 @@ end
    set(gca,'YTick', 1:length(parameterList));
    set(gca,'XTick', 1:length(patient));
    caxis([0 1]);
-   title({['R^2-Werte der quadratischen Regression']; ['(' cMode '-Intervall)']});
+   title({['R^2-Werte der quadratischen Regression']; ['(Abhängigkeit vom ' cMode '-Intervall)']});
 end
    
