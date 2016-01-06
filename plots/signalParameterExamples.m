@@ -14,6 +14,8 @@ Metadata = importPatientMetadata('..\data\raw\Patient_data.xlsx');
 
 %% Good example
 % Pt 04 1:06 - 2:53
+% First part for good signal, no error in annotations, second part with
+% error in annotation (as example)
 
 Data = load('../data/matlab/Pt04/Pt04_processedDataStruct.mat');
 fs = Data.fs;
