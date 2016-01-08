@@ -7,8 +7,6 @@ function [ ipa ] = getIPA( beat, slope )
 %           single beat with a length of L samples
 %       slope (vector [Lx1])
 %           derivate of the single beat with a length of L samples
-%       fs (scalar)
-%           sampling frequency of the signals
 %   Returns:
 %       ipa (scalar)
 %           inflection point area [a.u.]
@@ -24,17 +22,24 @@ function [ ipa ] = getIPA( beat, slope )
 % Author: Johann Roth
 % Date: 14.12.2015
 
+% % beat = Results.Pt02.AV.ToRef.PpgCuff.meanBeat{3,2,1}; % nice beat with dias max
+% beat = Results.Pt02.AV.ToRef.PpgCuff.meanBeat{3,2,2}; % beat with no 2nd max
+% % beat = Results.Pt03.AV.FromRef.PpgCuff.meanBeat{3,2,2}; % ugly beat
+% slope = getDerivative( beat );
+% fs = 200;
+
 if isnan(beat(1))
     ipa = nan;
 else
     %% Get start and end of the beat (minima)
     % look for minima in the first and last 20% of the beat (expected position of
-    % first minimum.
+    % first minimum).
     beatBackwards = flipud(beat);
     [ ~, iMin1] = min( beat(1:round(end*0.2)) );
     [ ~, iMin2] = min( beatBackwards(1:round(end*0.2)) );
     iMin2 = length(beat) - iMin2 + 1;
-    [~, iMax] = max(beat);
+    [~, iMax] = max(beat(round(0.2*end):round(0.8*end)));
+    iMax = round(length(beat)*0.2)+iMax -1;
     
     %% Calculate zero crossings in slope signal
     % in zeroCrossings the stamps right before the zero crossing are
@@ -46,6 +51,7 @@ else
     
     %% Check if beat curve has a diastolic maximum
     % search for zero crossing in slope between systolic maximum and before
+    % diastolic minimum in the end
     [pks, locs, w, ~] = findpeaks(slope);
     locationMask = and( locs > iMax, locs < length(beat) * 0.7);
     widthMask = w > 5;

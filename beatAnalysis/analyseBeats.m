@@ -18,11 +18,17 @@ function [ UpdatedResults ] = analyseBeats( Results, fs, patient )
 
 %% List of parameters
 Results.Info.parameters = [{'pulseHeight'}, {'pulseWidth'},...
-                           {'pulseArea'}, {'heightOverWidth'},...
-                           {'crestTime'}, {'ipa'}];
+                           {'pulseArea'},{'crestTime'},...
+                           {'maxSlope'}, {'ipa'}];
 Results.Info.parameterUnits = [{'a.u.'}, {'ms'},...
-                               {'a.u.'}, {'a.u.'},...
-                               {'ms'}, {'a.u.'}];
+                               {'a.u.'}, {'ms'},...
+                               {'a.u.'}, {'a.u.'}];
+Results.Info.parameterLatexNames = [{'Pulsamplitude'}, {'Pulsebreite'},...
+                                    {'Pulsfläche'}, {'CT'},...
+                                    {'Max. Anstieg'}, {'IPA'}];
+Results.Info.parameterLatexScatterplotNames = [{'Änderung der Pulsamplitude'}, {'Änderung der Pulsebreite'},...
+                                               {'Änderung der Pulsfläche'}, {'Änderung der CT'},...
+                                               {'Änderung des max. Anstiegs'}, {'Änderung der IPA'}];
 
 Results.Info.nMeanBeats = 0;
 
@@ -37,6 +43,7 @@ listChanges = 1:3;
 % current value
 %% Loop through beats in Results struct to calculate beat parameters
 for iPatient = 1:length(patient)                            % Pt01 / ... / Pt06
+    fprintf(['..analysing patient ' num2str(patient(iPatient)) '..\n']);
     patientId = ['Pt0' num2str(patient(iPatient))];
     for iMode = listStimModes                               % AV / VV
         cMode = char(iMode);
@@ -49,6 +56,12 @@ for iPatient = 1:length(patient)                            % Pt01 / ... / Pt06
                 
                 %% Initializing of matrices to save extracted parameters in ########
                 Results.(patientId).(cMode).(cDirection).(cSignal).pulseHeight = zeros(3,2,nIntervals);
+                Results.(patientId).(cMode).(cDirection).(cSignal).pulseWidth = zeros(3,2,nIntervals);
+                Results.(patientId).(cMode).(cDirection).(cSignal).pulseArea = zeros(3,2,nIntervals);
+                Results.(patientId).(cMode).(cDirection).(cSignal).crestTime = zeros(3,2,nIntervals);
+                Results.(patientId).(cMode).(cDirection).(cSignal).maxSlope = zeros(3,2,nIntervals);
+                Results.(patientId).(cMode).(cDirection).(cSignal).ipa = zeros(3,2,nIntervals);
+                
                 %% All matrices have been initialized ##############################
                 
                 for iChange = listChanges                   % #1 / #2 / #3
@@ -63,6 +76,7 @@ for iPatient = 1:length(patient)                            % Pt01 / ... / Pt06
                             pulseArea = getPulseArea(beat);
                             crestTime = getCrestTime(beat, fs);
                             ipa = getIPA(beat, slope);
+                            maxSlope = getMaxSlope(beat,slope);
                             
                             Results.(patientId).(cMode).(cDirection).(cSignal).pulseHeight(iChange, iPosition, iInterval) ...
                                 = pulseHeight;
@@ -70,10 +84,12 @@ for iPatient = 1:length(patient)                            % Pt01 / ... / Pt06
                                 = pulseWidth;
                             Results.(patientId).(cMode).(cDirection).(cSignal).pulseArea(iChange, iPosition, iInterval) ...
                                 = pulseArea;
-                            Results.(patientId).(cMode).(cDirection).(cSignal).heightOverWidth(iChange, iPosition, iInterval) ...
-                                = pulseHeight/pulseArea;
+%                             Results.(patientId).(cMode).(cDirection).(cSignal).heightOverWidth(iChange, iPosition, iInterval) ...
+%                                 = pulseHeight/pulseArea;
                             Results.(patientId).(cMode).(cDirection).(cSignal).crestTime(iChange, iPosition, iInterval) ...
                                 = crestTime;
+                            Results.(patientId).(cMode).(cDirection).(cSignal).maxSlope(iChange, iPosition, iInterval) ...
+                                = maxSlope;
                             Results.(patientId).(cMode).(cDirection).(cSignal).ipa(iChange, iPosition, iInterval) ...
                                 = ipa;
                             

@@ -11,7 +11,7 @@ function [ pulseHeight ] = getPulseHeight( beat )
 %
 % Author: Johann Roth
 % Date: 11.12.2015
-pulseHeight = max(beat);
+pulseHeight = max(beat(round(0.2*end):round(0.8*end)));
 
 end
 

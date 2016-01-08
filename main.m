@@ -175,8 +175,7 @@ end
 
 %% Analysis of extracted Data
 fprintf('Analysing beats..\n');
-% This is implemented in a second loop to be able to run this seperately if
-% needed.
+patient = 1:6;
 Results = analyseBeats(Results, TARGETFS, patient);
 Results = calculateDeltas(Results, patient);
 Results = saveScatterplotData(Results, patient);

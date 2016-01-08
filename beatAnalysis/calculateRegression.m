@@ -30,7 +30,7 @@ function [ xRegression, yRegression, rSquared, quadraticCoeff] = calculateRegres
 
 quadraticCoeff = polyfit(x,y,2);
 
-xRegression = linspace(min(x)-20,max(x)+20);
+xRegression = linspace(min(x),max(x));
 yRegression = polyval(quadraticCoeff, xRegression);
 
 %% Calculation of rSquared
@@ -38,7 +38,7 @@ yRegression = polyval(quadraticCoeff, xRegression);
 % estimated values by regression
 yEstimated = polyval(quadraticCoeff, x);
 
-residuals = y - yEstimated;
+% residuals = y - yEstimated;
 yMean = mean(y);
 
 % figure;

@@ -27,14 +27,15 @@ if isnan(beat(1))
     crestTime = nan;
 else
     %% first minimum and maximum of beat are calculated
-    [ ~, iMinimum] = min( beat(1:round(end*0.2)) );
-    [~, iMaximum] = max(beat);
+    [ ~, iMin] = min( beat(1:round(end*0.2)) );
+    [~, iMax] = max(beat(round(0.2*end):round(0.8*end)));
+    iMax = round(length(beat)*0.2)+iMax -1;
     
     
     
     % width is calculated by subtracting the stamps of the passes.
     % (samples/fs = time [s], time [s] * 1000 = time [ms])
-    crestTime = (iMaximum - iMinimum) * 1000/fs;
+    crestTime = (iMax - iMin) * 1000/fs;
 end
 
 end
