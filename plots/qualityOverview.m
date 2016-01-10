@@ -35,6 +35,7 @@ for iPatient = 1:nPatients
         subplot(nPatients,nModes,(iPatient - 1) * nModes + iMode);
         grid on;
         hold on;
+        box on;
         ax{iPatient,iMode} = gca;
         
         for iSignal = 1:nSignals
@@ -64,7 +65,7 @@ for iPatient = 1:nPatients
                 ylabel({['Patient ' num2str(patient(iPatient))] ['\fontsize{9pt} Ausgeschlossene'] ['\fontsize{9pt}Schläge (%)']});
                 
             else                % VV
-                axis([-80, 80, 0, 50]);
+                axis([-100, 100, 0, 50]);
                 set(gca,'XTick',-80:40:80);
             end
             if iPatient == 1     % first patient

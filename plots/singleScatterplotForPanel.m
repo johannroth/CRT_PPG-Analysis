@@ -1,4 +1,4 @@
-%% Plot scatterplot into currently active subplot 
+%% Plot scatterplot into currently active subplot
 % This script has to be called to plot a scatterplot and regression curves
 % into a predefined subplot.
 %
@@ -7,6 +7,7 @@
 %   cMode
 %   cSignal
 %   cParameter
+%   cNameString
 %
 % plots are saved to ....
 %
@@ -20,13 +21,18 @@ fromRefData = Results.(patientId).(cMode).FromRef.(cSignal).ScatterplotData.(cPa
 toRefData   = Results.(patientId).(cMode).ToRef.(cSignal).ScatterplotData.(cParameter);
 refInterval = Results.(patientId).(cMode).refInterval;
 
+%% Convert to percentage values
+fromRefData(:,3) = 100*fromRefData(:,3);
+toRefData(:,3) = 100*toRefData(:,3);
+
 %% Create scatterplot
 hold on;
 grid on;
+grid minor;
 plot(fromRefData(:,1),fromRefData(:,3),'rx');
 plot(toRefData(:,1),toRefData(:,3),'bo');
-plot([-500 500],[1 1],'k:');
-plot(refInterval,1,'ks');
+plot([-500 500],[0 0],'k:');
+plot(refInterval,0,'ks');
 
 %% Find outliers in plot (more than 1.5 or less than 0.5 change)
 % and mark them in plot
@@ -58,36 +64,65 @@ end
 %% Create Regression plots
 
 % for FromRef values
-[ xReg, yReg, rSquaredFromRef, ~] = ...
-    calculateRegression( fromRefData(:,1), fromRefData(:,3) );
-plot(xReg,yReg,'r-.');
-% for ToRef values
-[ xReg, yReg, rSquaredToRef, ~] = ...
-    calculateRegression( toRefData(:,1), toRefData(:,3) );
-plot(xReg,yReg,'b-.');
-% for combined values
-[ xReg, yReg, rSquared, ~] = ...
-    calculateRegression( [ toRefData(:,1) ; fromRefData(:,1) ],...
-                         [ toRefData(:,3) ; fromRefData(:,3) ]);
-plot(xReg,yReg,'g-', 'LineWidth', 1.5);
-
-%% Put text for rSquared values in corner of plot
-switch cMode
-    case 'AV'
-        xText = 350;
-    case 'VV'
-        xText = 100;
+if length(fromRefData(:,3)) > 3
+    [ xReg, yReg, rSquaredFromRef, ~] = ...
+        calculateRegression( fromRefData(:,1), fromRefData(:,3) );
+    plot(xReg,yReg,'r-.', 'LineWidth', 1);
 end
-yText = yLimit(1)*1.05;
-text(xText,yText,['R^2 = ' num2str(rSquared)], ...
-    'VerticalAlignment','bottom',...
-    'HorizontalAlignment','right');
+% for ToRef values
+if length(toRefData(:,3)) > 3
+    [ xReg, yReg, rSquaredToRef, ~] = ...
+        calculateRegression( toRefData(:,1), toRefData(:,3) );
+    plot(xReg,yReg,'b-.', 'LineWidth', 1);
+end
+% for combined values
+if length(toRefData(:,3)) +  length(fromRefData(:,3)) > 3
+    [ xReg, yReg, rSquared, ~] = ...
+        calculateRegression( [ toRefData(:,1) ; fromRefData(:,1) ],...
+        [ toRefData(:,3) ; fromRefData(:,3) ]);
+    plot(xReg,yReg,'g-', 'LineWidth', 1.5);
+else
+    rSquared = 0;
+end
+
+%% Put rectangle under rSquared value in corner
+% switch cMode
+%     case 'AV'
+%         rectangle('Position',[ 100 0.535 250 0.035],...
+%             'FaceColor', 'w',...
+%             'EdgeColor', 'none');
+%     case 'VV'
+%         rectangle('Position',[ 100 0.52 250 0.07 ])
+% end
+
+%
+% %% Put text for rSquared values in corner of plot
+% switch cMode
+%     case 'AV'
+%         xText = 340;
+%     case 'VV'
+%         xText = 100;
+% end
+% yText = yLimit(1)*1.05;
+% text(xText,yText,['R^2 = ' num2str(rSquared,'%1.3f')], ...
+%     'VerticalAlignment','bottom',...
+%     'HorizontalAlignment','right');
 
 %% Scaling depending on stimulation mode (AV or VV)
 switch cMode
     case 'AV'
-        axis([ 0 360 yLimit(1) yLimit(2)]);
+        axis([ 0 350 yLimit(1) yLimit(2)]);
+        set(gca,'XTick',0:100:350);
     case 'VV'
         axis([ -100 100 yLimit(1) yLimit(2)]);
+        set(gca,'XTick',-80:40:80);
+end
+set(gca,'YTick',yLimit(1):25:yLimit(2));
+
+%% Input title
+if rSquared == 0
+    title({['\fontsize{8}' cNameString] ['\rm R^2 = N/A']});
+else
+title({['\fontsize{8}' cNameString] ['\rm R^2 = ' num2str(rSquared,'%1.3f')]});
 end
 

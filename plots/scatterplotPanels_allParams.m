@@ -14,7 +14,7 @@ EXCLUDEBEATS = 0;
 MAXBEATS = 8;
 
 % Limits for scatterplots
-yLimit = [0.5 1.5];
+yLimit = [-50 50];
 
 %% Data import
 Results = load(['../results/matlab/Results_MAX' num2str(MAXBEATS) '_EX' num2str(EXCLUDEBEATS) '.mat']);
@@ -36,38 +36,69 @@ nBsParameters = length(listBsParameters);
 patient = 1:6;
 nPatients = length(patient);
 listStimModes = [{'AV'},{'VV'}];
+nModes = length(listStimModes);
 listSignals = [{'PpgClip'},{'PpgCuff'},{'BsBp'}];
 
+%% Loop through all patients (1:6) and Modes (AV and VV)
 
-%% Create panel with subplots
-
-%example for one plot
-cMode = 'AV';
-iPatient = 4;
-patientId = ['Pt0' num2str(patient(iPatient))];
-figure;
-subplot1(3,6);
-
-%% Loop through all parameters
-% first row: PpgClip parameters
-cSignal = 'PpgClip';
-for iParameter = 1:nParameters
-    cParameter = char(listParameters{iParameter});
-    subplot1(iParameter);
-    singleScatterplotForPanel;
+for iPatient = 1:nPatients
+    for iMode = 1:nModes
+        cMode = char(listStimModes(iMode));
+        %% Create panel with subplots
+        patientId = ['Pt0' num2str(patient(iPatient))];
+        figure;
+        subplot1(3,6,'Gap',[0.01 0.05],'XTickL','Margin','YTickL','Margin');
+        
+        %% Loop through all parameters to create subplots
+        % first row: PpgClip parameters
+        cSignal = 'PpgClip';
+        for iParameter = 1:nParameters
+            cParameter = char(listParameters{iParameter});
+            cNameString = char(listParameterLatexNames{iParameter});
+            subplot1(iParameter);
+            singleScatterplotForPanel;
+        end
+        
+        cSignal = 'PpgCuff';
+        for iParameter = 1:nParameters
+            cParameter = char(listParameters{iParameter});
+            cNameString = char(listParameterLatexNames{iParameter});
+            subplot1(6+iParameter);
+            singleScatterplotForPanel;
+        end
+        
+        cSignal = 'BsBp';
+        for iParameter = 1:nBsParameters
+            cParameter = char(listBsParameters{iParameter});
+            cNameString = char(listBsParameterLatexNames{iParameter});
+            subplot1(12+iParameter);
+            singleScatterplotForPanel;
+            xlabel(['\fontsize{8}' cMode '-Interval (ms)']);
+        end
+        
+        %% Insert labels for y-axis
+        
+        subplot1(1);
+        ylabel({['\fontsize{8}' 'Änderung des Parameters'] ['bzgl. Referenzwert (in %)'] ['Signal: \bf PPG_{Clip}']});
+        subplot1(6+1);
+        ylabel({['\fontsize{8}' 'Änderung des Parameters'] ['bzgl. Referenzwert (in %)'] ['Signal: \bf PPG_{Cuff}']});
+        subplot1(12+1);
+        ylabel({['\fontsize{8}' 'Änderung des Parameters'] ['bzgl. Referenzwert (in %)'] ['Signal: \bf BP']});
+        
+        %% Insert Title for the figure
+        subplot1(2);
+        text(0,1.23,...
+            ['\fontsize{14} Patient ' num2str(patient(iPatient)) ' (Variation des ' cMode '-Intervalls)'],...
+            'Clipping','off',...
+            'Fontweight','bold',...
+            'Units','normalized');
+        
+        
+        %% Print figure to file
+        set(gcf, 'PaperPosition', [0.25 -1.1 20 25]);
+        set(gcf, 'PaperSize', [19.4 23.2]);
+        print(gcf, ['../results/plots/Scatterplots/Scatterplots_' patientId '_' cMode '_EX' num2str(EXCLUDEBEATS) 'MAX' num2str(MAXBEATS)], '-dpdf', '-r600');
+        close(gcf);
+        
+    end
 end
-
-cSignal = 'PpgCuff';
-for iParameter = 1:nParameters
-    cParameter = char(listParameters{iParameter});
-    subplot1(6+iParameter);
-    singleScatterplotForPanel;
-end
-
-cSignal = 'BsBp';
-for iParameter = 1:nBsParameters
-    cParameter = char(listBsParameters{iParameter});
-    subplot1(12+iParameter);
-    singleScatterplotForPanel;
-end
-

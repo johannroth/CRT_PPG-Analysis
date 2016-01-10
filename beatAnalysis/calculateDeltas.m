@@ -62,7 +62,8 @@ for iPatient = 1:length(patient)                            % Pt01 / ... / Pt06
                                     try
                                         Results.(patientId).(cMode).(cDirection).(cSignal).([cParameter 'Rel'])(iChange, iInterval) ...
                                             =  Results.(patientId).(cMode).(cDirection).(cSignal).(cParameter)(iChange, 2, iInterval) ...
-                                            / Results.(patientId).(cMode).(cDirection).(cSignal).(cParameter)(iChange, 1, iInterval);
+                                            / Results.(patientId).(cMode).(cDirection).(cSignal).(cParameter)(iChange, 1, iInterval)...
+                                            - 1;
                                     catch
                                         Results.(patientId).(cMode).(cDirection).(cSignal).([cParameter 'Rel'])(iChange, iInterval) = nan;
                                     end
@@ -74,7 +75,8 @@ for iPatient = 1:length(patient)                            % Pt01 / ... / Pt06
                                     try
                                         Results.(patientId).(cMode).(cDirection).(cSignal).([cParameter 'Rel'])(iChange, iInterval) ...
                                             =  Results.(patientId).(cMode).(cDirection).(cSignal).(cParameter)(iChange, 1, iInterval) ...
-                                            / Results.(patientId).(cMode).(cDirection).(cSignal).(cParameter)(iChange, 2, iInterval);
+                                            / Results.(patientId).(cMode).(cDirection).(cSignal).(cParameter)(iChange, 2, iInterval)...
+                                            - 1;
                                     catch
                                         Results.(patientId).(cMode).(cDirection).(cSignal).([cParameter 'Rel'])(iChange, iInterval) = nan;
                                     end
@@ -121,7 +123,8 @@ for iPatient = 1:length(patient)                            % Pt01 / ... / Pt06
                                         = valueAfterChange - valueBeforeChange;
                                     try
                                         Results.(patientId).(cMode).(cDirection).(cSignal).([cParameter 'Rel'])(iChange, iInterval) ...
-                                            =  valueAfterChange / valueBeforeChange;
+                                            =  valueAfterChange / valueBeforeChange...
+                                            - 1;
                                     catch
                                         Results.(patientId).(cMode).(cDirection).(cSignal).([cParameter 'Rel'])(iChange, iInterval) = nan;
                                     end
@@ -142,7 +145,8 @@ for iPatient = 1:length(patient)                            % Pt01 / ... / Pt06
                                         = valueBeforeChange - valueAfterChange;
                                     try
                                         Results.(patientId).(cMode).(cDirection).(cSignal).([cParameter 'Rel'])(iChange, iInterval) ...
-                                            = valueBeforeChange / valueAfterChange;
+                                            = valueBeforeChange / valueAfterChange...
+                                            - 1;
                                     catch
                                         Results.(patientId).(cMode).(cDirection).(cSignal).([cParameter 'Rel'])(iChange, iInterval) = nan;
                                     end
