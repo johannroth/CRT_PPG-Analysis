@@ -35,14 +35,14 @@ QUALITYPLOTS = false;
 % equals 15 beats with 90 bpm or 16.7 beats with 100 bpm)
 % This value is the maximum possible amount. The amount of beats that are
 % included in the calculation may be smaller due to exclusion of bad beats!
-MAXBEATS = 11; % 3...15 beats
+MAXBEATS = 8; % 3...15 beats
 
 Results.Info.maxbeats = MAXBEATS;
 
 % Amount of beats directly before or after the change of interval to be
 % excluded. The maximum amount of beats will be lowered by excluding the
 % 'inner' beats around a change of interval
-EXCLUDEBEATS = 3; % 0...MAXBEATS-3
+EXCLUDEBEATS = 0; % 0...MAXBEATS-3
 
 Results.Info.excludebeats = EXCLUDEBEATS;
 
