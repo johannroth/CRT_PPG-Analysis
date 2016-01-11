@@ -84,11 +84,11 @@ set(hAx1(2),'YLim',[0 160]);
 set(hAx1(1),'YTick',-50:25:80);
 set(hAx1(2),'YTick',0:40:400);
 set(hAx1(1),'YColor','k');
-set(hAx1(2),'YColor','r');
+set(hAx1(2),'YColor','b');
 set(hLine2,'LineWidth',1);
 set(hLine2,'LineStyle','--');
 set(hLine1,'Color','k');
-set(hLine2,'Color','r');
+set(hLine2,'Color','b');
 grid on;
 grid minor;
 
@@ -106,11 +106,11 @@ set(hAx2(2),'YLim',[0 160]);
 set(hAx2(1),'YTick',-50:25:80);
 set(hAx2(2),'YTick',0:40:400);
 set(hAx2(1),'YColor','k');
-set(hAx2(2),'YColor','r');
+set(hAx2(2),'YColor','b');
 set(hLine2,'LineWidth',1);
 set(hLine2,'LineStyle','--');
 set(hLine1,'Color','k');
-set(hLine2,'Color','r');
+set(hLine2,'Color','b');
 grid on;
 grid minor;
 
@@ -126,11 +126,11 @@ set(hAx3(2),'YLim',[0 160]);
 set(hAx3(1),'YTick',0:30:200);
 set(hAx3(2),'YTick',0:40:400);
 set(hAx3(1),'YColor','k');
-set(hAx3(2),'YColor','r');
+set(hAx3(2),'YColor','b');
 set(hLine2,'LineWidth',1);
 set(hLine2,'LineStyle','--');
 set(hLine1,'Color','k');
-set(hLine2,'Color','r');
+set(hLine2,'Color','b');
 grid on;
 grid minor;
 
@@ -147,28 +147,28 @@ set(hAx4(2),'YLim',[0 160]);
 set(hAx4(1),'YTick',5:10:205);
 set(hAx4(2),'YTick',0:40:400);
 set(hAx4(1),'YColor','k');
-set(hAx4(2),'YColor','r');
+set(hAx4(2),'YColor','b');
 set(hLine1,'LineWidth',1);
 set(hLine2,'LineWidth',1);
 set(hLine2,'LineStyle','--');
 set(hLine1,'Color','k');
-set(hLine2,'Color','r');
+set(hLine2,'Color','b');
 grid on;
 grid minor;
 xlabel('Zeit (s)','FontSize',9);
 
 hold(hAx4(2), 'on');
 hold(hAx4(1), 'on');
-plotAx4_1 = plot([126.315 130.125],[55 55],'b-', 'LineWidth',1);
-plotAx4_2 = plot(126.315,55,'b>', 'MarkerFaceColor','auto');
-plotAx4_3 = plot(130.125,55,'b<', 'MarkerFaceColor','auto');
+plotAx4_1 = plot([126.315 130.125],[55 55],'r-', 'LineWidth',1);
+plotAx4_2 = plot(126.315,55,'r>', 'MarkerFaceColor','auto');
+plotAx4_3 = plot(130.125,55,'r<', 'MarkerFaceColor','auto');
 text(128.2200,55,'Zeitversatz:',...
-    'Color', 'b',...
+    'Color', 'k',...
     'VerticalAlignment', 'bottom',...
     'HorizontalAlignment', 'center',...
     'FontSize', 8);
 text(128.2200,55,[num2str(130.125-126.315) ' s'],...
-    'Color', 'b',...
+    'Color', 'k',...
     'VerticalAlignment', 'top',...
     'HorizontalAlignment', 'center',...
     'FontSize', 8);

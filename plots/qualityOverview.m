@@ -36,6 +36,7 @@ for iPatient = 1:nPatients
         grid on;
         hold on;
         box on;
+        grid minor;
         ax{iPatient,iMode} = gca;
         
         for iSignal = 1:nSignals
@@ -83,15 +84,22 @@ for iPatient = 1:nPatients
     end
 end
 
+% %% Adapt position of the legend
+% plotLegend = legend(ax{6,2},'PPG_{Clip}','PPG_{Cuff}');
+% plotLegend.Units = 'pixels';
+% plotLegend.Position = [255,6,100,50];
 %% Adapt position of the legend
-plotLegend = legend(ax{6,2},'PPG_{Clip}','PPG_{Cuff}');
-plotLegend.Units = 'pixels';
-plotLegend.Position = [255,6,100,50];
+plotLegend = legend('PPG-Clip','PPG-Manschette');
+plotLegend.FontSize = 8;
+plotLegend.Units = 'centimeters';
+plotLegend.Position = [7.5,0.55,0.8,0.3];
+plotLegend.Orientation = 'horizontal';
+plotLegend.Box = 'off';
 
 
 %% Print to pdf
-set(gcf, 'PaperPosition', [0 0 15 20]);
-set(gcf, 'PaperSize', [14 19.5]);
+set(gcf, 'PaperPosition', [0.15 -0.3 14 20]);
+set(gcf, 'PaperSize', [13 18.9]);
 print(gcf, '../results/plots/qualityOverview', '-dpdf', '-r600'); % -painters for alternative renderer
 
 %
