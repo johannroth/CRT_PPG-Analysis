@@ -21,10 +21,10 @@ Results = load(['../results/matlab/Results_MAX' num2str(MAXBEATS) '_EX' num2str(
 
 %% Selected parameter, mode, signal and patient
 % Good Example
-cPatient = 4;
+cPatient = 6;
 cMode = 'AV';
 cSignal = 'PpgClip';
-cParameter = 'pulseHeight';
+cParameter = 'pulseArea';
 legendOutliers = false;
 
 % % bad example

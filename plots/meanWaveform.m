@@ -87,7 +87,7 @@ for iPatient = 1:nPatients
 end
 
 %% Adapt position of the legend
-plotLegend = legend('PPG-Clip','PPG-Manschette');
+plotLegend = legend('PPG-Fingerclip','PPG-Manschette');
 plotLegend.FontSize = 8;
 plotLegend.Units = 'centimeters';
 plotLegend.Position = [7.5,0.1,0.8,0.3];

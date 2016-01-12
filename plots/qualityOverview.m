@@ -89,7 +89,7 @@ end
 % plotLegend.Units = 'pixels';
 % plotLegend.Position = [255,6,100,50];
 %% Adapt position of the legend
-plotLegend = legend('PPG-Clip','PPG-Manschette');
+plotLegend = legend('PPG-Fingerclip','PPG-Manschette');
 plotLegend.FontSize = 8;
 plotLegend.Units = 'centimeters';
 plotLegend.Position = [7.5,0.55,0.8,0.3];

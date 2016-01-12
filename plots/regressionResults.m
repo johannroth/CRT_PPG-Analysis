@@ -17,6 +17,8 @@ Results = load(['../results/matlab/Results_MAX' num2str(MAXBEATS) '_EX' num2str(
 
 maxChangeSpan = 0;
 minChangeSpan = 0;
+% threshold for rSquared value to calculate changespan.
+changeSpanThreshold = 0.3;
 
 listParameters = Results.Info.parameters;
 listBsParameters = Results.Info.bsParameters;
@@ -60,12 +62,12 @@ for iMode = 1:length(listStimModes)
             else
                 x = scatterplotData(:,1);
                 y = scatterplotData(:,3);
-                [~,yReg,rSquared,~] = calculateRegression(x,y);
+                [~,yReg,rSquared,quadraticCoeff] = calculateRegression(x,y);
                 rSquaredTable{1+iParameter,iPatient + 1} = rSquared;
-                %% If rSquared value is over 50%, the span of percentual change is saved
-                if rSquared > 0.5
-                    [maxChange, iMax] = max(yReg);
-                    [minChange, iMin] = min(yReg);
+                %% If rSquared value is over a certain value, the span of percentual change is saved
+                if rSquared > changeSpanThreshold
+                    [maxChange, ~] = max(yReg);
+                    [minChange, ~] = min(yReg);
                     cChangeSpan = 100*(maxChange-minChange);
                     %% changeSpan is always positive so far (maximum
                     % change and mimimum change are percentage values from
@@ -73,14 +75,9 @@ for iMode = 1:length(listStimModes)
                     %% Sign of changeSpan is to show the direction
                     % of the parabola (positive -> max in the middle,
                     % negative -> min in the middle)
-                    
-                    if (iMax == 1) || (iMax == length(yReg))
-                        % Maximum is either first or last available
-                        % sample of parabola
-                        % Minimum thus has to be in the middle
+                    if quadraticCoeff(1) > 0
                         cChangeSpan = -cChangeSpan;
-                    end
-                    
+                    end                    
                     changeSpan(iParameter,iPatient) = cChangeSpan;
                 else
                     changeSpan(iParameter,iPatient) = 0;
@@ -101,12 +98,12 @@ for iMode = 1:length(listStimModes)
             else
                 x = scatterplotData(:,1);
                 y = scatterplotData(:,3);
-                [~,yReg,rSquared,~] = calculateRegression(x,y);
+                [~,yReg,rSquared,quadraticCoeff] = calculateRegression(x,y);
                 rSquaredTable{1+nParameters+iParameter,iPatient + 1} = rSquared;
-                %% If rSquared value is over 50%, the span of percentual change is saved
-                if rSquared > 0.5
-                    [maxChange,  iMax] = max(yReg);
-                    [minChange, iMin] = min(yReg);
+                %% If rSquared value is over a certain value, the span of percentual change is saved
+                if rSquared > changeSpanThreshold
+                    [maxChange, ~] = max(yReg);
+                    [minChange, ~] = min(yReg);
                     cChangeSpan = 100*(maxChange-minChange);
                     %% changeSpan is always positive so far (maximum
                     % change and mimimum change are percentage values from
@@ -114,11 +111,7 @@ for iMode = 1:length(listStimModes)
                     %% Sign of changeSpan is to show the direction
                     % of the parabola (positive -> max in the middle,
                     % negative -> min in the middle)
-                    
-                    if (iMax == 1) || (iMax == length(yReg))
-                        % Maximum is either first or last available
-                        % sample of parabola
-                        % Minimum thus has to be in the middle
+                    if quadraticCoeff(1) > 0
                         cChangeSpan = -cChangeSpan;
                     end
                     
@@ -145,7 +138,7 @@ for iMode = 1:length(listStimModes)
                 [~,yReg,rSquared,~] = calculateRegression(x,y);
                 rSquaredTable{1+2*nParameters+iParameter,iPatient + 1} = rSquared;
                 %% If rSquared value is over 50%, the span of percentual change is saved
-                if rSquared > 0.5
+                if rSquared > changeSpanThreshold
                     [maxChange,  iMax] = max(yReg);
                     [minChange, iMin] = min(yReg);
                     % abs, 100 times and minus 1 to convert to percentual
@@ -206,7 +199,8 @@ for iMode = 1:length(listStimModes)
     minChangeSpan = min(minChangeSpan, ceil(min(changeSpan(:))));
     imagesc(changeSpan);
     
-    colormap(flipud(hot));
+
+%     colormap(flipud(hot));
 %     colormap(hot);
     
     if iMode == 1   % left diagram (AV)
@@ -216,7 +210,7 @@ for iMode = 1:length(listStimModes)
         set(gca,'YTick', 1:length(parameterList));
     else            % right diagram
         c = colorbar;
-        c.Label.String = 'Maximale Änderungsspanne der Parameter in Prozentpunkten';
+        c.Label.String = 'Änderungsspanne der Parameter in Prozentpunkten';
         set(gca,'YtickLabel', []);
         set(gca,'YTick', 1:length(parameterList));
     end
@@ -239,13 +233,18 @@ close(rSquaresFigure);
 
 %% Adjust changeSpan heatmap plot
 set(groot,'CurrentFigure',changeSpanFigure);
+
 set(changeSpanAx{1}, 'Position', [0.3 0.1 0.2 0.8]);
 set(changeSpanAx{2}, 'Position', [0.53 0.1 0.2 0.8]);
 if minChangeSpan == maxChangeSpan
     maxChangeSpan = minChangeSpan + 10;
 end
-set(changeSpanAx{1}, 'CLim', [minChangeSpan maxChangeSpan]);
-set(changeSpanAx{2}, 'Clim', [minChangeSpan maxChangeSpan]);
+% set(changeSpanAx{1}, 'CLim', [minChangeSpan maxChangeSpan]);
+% set(changeSpanAx{2}, 'Clim', [minChangeSpan maxChangeSpan]);
+changeSpanMax = max(abs([minChangeSpan maxChangeSpan]));
+set(changeSpanAx{1}, 'CLim', [-changeSpanMax changeSpanMax]);
+set(changeSpanAx{2}, 'Clim', [-changeSpanMax changeSpanMax]);
+colormap(bluewhitered);
 
 % and print it
 set(gcf, 'PaperPosition', [0.5 0.3 12 10]);
