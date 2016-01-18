@@ -42,7 +42,7 @@ Results.Info.maxbeats = MAXBEATS;
 % Amount of beats directly before or after the change of interval to be
 % excluded. The maximum amount of beats will be lowered by excluding the
 % 'inner' beats around a change of interval
-EXCLUDEBEATS = 0; % 0...MAXBEATS-3
+EXCLUDEBEATS = 3; % 0...MAXBEATS-3
 
 Results.Info.excludebeats = EXCLUDEBEATS;
 

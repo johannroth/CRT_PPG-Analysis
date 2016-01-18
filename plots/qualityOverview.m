@@ -23,6 +23,9 @@ nSignals = length(listSignals);
 nModes = length(listModes);
 nPatients = length(patient);
 
+% Matrix to save qualities for both signals
+meanQuality = zeros(nModes,nPatients,nSignals);
+
 % Matrix to save axes handles for all subplots
 ax = cell(nPatients,nModes);
 
@@ -32,7 +35,9 @@ for iPatient = 1:nPatients
     for iMode = 1:nModes
         cMode = char(listModes(iMode));
         
-        subplot(nPatients,nModes,(iPatient - 1) * nModes + iMode);
+        cSubplot = subplot(nPatients,nModes,(iPatient - 1) * nModes + iMode);
+        cPos = get(cSubplot,'Position');
+        set(cSubplot,'Position',[cPos(1) cPos(2) cPos(3)*0.9 cPos(4)*0.85]); % , 'Position', [0.13 0.11 0.775 0.815]
         grid on;
         hold on;
         box on;
@@ -54,6 +59,8 @@ for iPatient = 1:nPatients
                 quality(:,iInterval) = qualityValues;
             end
             
+            meanQuality(iMode, iPatient,iSignal) = 100*(1 - mean(quality(:)));
+            
             if iSignal == 1     % Clip
                 plot(interval, 100*(1-mean(quality)),'bs-.');
             else                % Cuff
@@ -65,24 +72,32 @@ for iPatient = 1:nPatients
                 set(gca,'XTick',0:60:360);
                 ylabel({['Patient ' num2str(patient(iPatient))] ['\fontsize{9pt} Ausgeschlossene'] ['\fontsize{9pt}Schläge (%)']});
                 
+                
             else                % VV
                 axis([-100, 100, 0, 50]);
                 set(gca,'XTick',-80:40:80);
+                ylabel({['\fontsize{9pt} Ausgeschlossene'] ['\fontsize{9pt}Schläge (%)']});
+                
+                
             end
-            if iPatient == 1     % first patient
-                title([cMode '-Interval']);
-            elseif iPatient == 6
-                xlabel([cMode '-Intervall (ms)']);
-            end
+            xlabel(['\fontsize{9pt}' cMode '-Intervall (ms)']);
             set(gca,'YTick',0:10:100);
             
             
-            %             title(['Patient ' num2str(patient(iPatient)) ' ' cMode]);
+            
+            
+            
             
         end
         
     end
 end
+
+%% Display overall quality for each Signal
+clipQuality = meanQuality(:,:,1);
+cuffQuality = meanQuality(:,:,2);
+fprintf(['Durchschnittlich aussortierte Schläge (über alle Patienten, Signal: Clip): ' num2str(mean(clipQuality(:))) ' Prozent\n']);
+fprintf(['Durchschnittlich aussortierte Schläge (über alle Patienten, Signal: Cuff): ' num2str(mean(cuffQuality(:))) ' Prozent\n']);
 
 % %% Adapt position of the legend
 % plotLegend = legend(ax{6,2},'PPG_{Clip}','PPG_{Cuff}');
@@ -92,13 +107,13 @@ end
 plotLegend = legend('PPG-Fingerclip','PPG-Manschette');
 plotLegend.FontSize = 8;
 plotLegend.Units = 'centimeters';
-plotLegend.Position = [7.5,0.55,0.8,0.3];
+plotLegend.Position = [6.5,0.5,0.8,0.3];
 plotLegend.Orientation = 'horizontal';
 plotLegend.Box = 'off';
 
 
 %% Print to pdf
-set(gcf, 'PaperPosition', [0.15 -0.3 14 20]);
+set(gcf, 'PaperPosition', [0.4 -0.3 14 20.5]);
 set(gcf, 'PaperSize', [13 18.9]);
 print(gcf, '../results/plots/qualityOverview', '-dpdf', '-r600'); % -painters for alternative renderer
 

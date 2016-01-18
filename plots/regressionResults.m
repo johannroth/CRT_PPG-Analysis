@@ -10,7 +10,7 @@
 % Date: 06.01.2016
 
 
-EXCLUDEBEATS = 0;
+EXCLUDEBEATS = 3;
 MAXBEATS = 8;
 
 Results = load(['../results/matlab/Results_MAX' num2str(MAXBEATS) '_EX' num2str(EXCLUDEBEATS) '.mat']);
@@ -125,7 +125,7 @@ for iMode = 1:length(listStimModes)
         for iParameter = 1:nBsParameters
             cParameter = char(listBsParameters(iParameter));
             cParameterLatexName = char(listBsParameterLatexNames(iParameter));
-            rSquaredTable{1+2*nParameters+iParameter,1} = [cParameterLatexName ' (Fino)'];
+            rSquaredTable{1+2*nParameters+iParameter,1} = [cParameterLatexName ' (BP)'];
             fromRefScatterplotData = Results.(patientId).(cMode).FromRef.BsBp.ScatterplotData.(cParameter);
             toRefScatterplotData = Results.(patientId).(cMode).ToRef.BsBp.ScatterplotData.(cParameter);
             scatterplotData = [fromRefScatterplotData; toRefScatterplotData];
@@ -180,7 +180,7 @@ for iMode = 1:length(listStimModes)
         set(gca,'YTick', 1:length(parameterList));
     else            % right diagram
         c = colorbar;
-        c.Label.String = 'R^2-Wert der quadratischen Regression';
+        c.Label.String = '\it R^2\rm-Wert der quadratischen Regression';
         set(gca,'YtickLabel', []);
         set(gca,'YTick', 1:length(parameterList));
     end

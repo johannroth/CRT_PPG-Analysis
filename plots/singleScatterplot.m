@@ -15,16 +15,16 @@ EXCLUDEBEATS = 0;
 MAXBEATS = 8;
 
 % Limits for scatterplots
-yLimit = [-50 50];
+yLimit = [-20 20];
 
 Results = load(['../results/matlab/Results_MAX' num2str(MAXBEATS) '_EX' num2str(EXCLUDEBEATS) '.mat']);
 
 %% Selected parameter, mode, signal and patient
 % Good Example
-cPatient = 6;
-cMode = 'AV';
-cSignal = 'PpgClip';
-cParameter = 'pulseArea';
+cPatient = 3;
+cMode = 'VV';
+cSignal = 'BsBp';
+cParameter = 'BpSystolic';
 legendOutliers = false;
 
 % % bad example
@@ -187,7 +187,7 @@ switch cMode
         axis([ -100 100 yLimit(1) yLimit(2)]);
         set(gca,'XTick',-80:40:80);
 end
-set(gca,'YTick',yLimit(1):25:yLimit(2));
+set(gca,'YTick',linspace(yLimit(1),yLimit(2),5));
 
 %% Input title
 if rSquared == 0
